@@ -153,6 +153,22 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
           )}
         </div>
       </div>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="rounded-2xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle>책 정보 수정</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={submitEdit} className="space-y-3 pt-2">
+            <Input placeholder="책 제목" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="h-11 rounded-lg" />
+            <Input placeholder="저자" value={editAuthor} onChange={(e) => setEditAuthor(e.target.value)} className="h-11 rounded-lg" />
+            <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-11 rounded-lg" />
+            <Button type="submit" disabled={savingEdit} className="w-full h-11 rounded-lg">
+              {savingEdit ? "저장 중…" : "저장"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
