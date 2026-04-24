@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
-import { Target, BookOpen, TrendingUp, Pencil, Check } from "lucide-react";
+import { Pencil, Check } from "lucide-react";
 import { Book } from "@/lib/storage";
 import { Input } from "@/components/ui/input";
+import sproutImg from "@/assets/doodle-sprout.png";
+import flowerImg from "@/assets/doodle-flower.png";
+import sunImg from "@/assets/doodle-sun.png";
+import cloudImg from "@/assets/doodle-cloud.png";
+import sparkleImg from "@/assets/doodle-sparkle.png";
 
 interface Props {
   books: Book[];
@@ -34,15 +39,13 @@ export const Dashboard = ({ books }: Props) => {
   const progress = goal > 0 ? Math.min(100, (total / goal) * 100) : 0;
   const remaining = Math.max(0, goal - total);
 
-  // 월별 카운트
-  const monthly = MONTHS.map((_, i) => 0);
+  const monthly = MONTHS.map(() => 0);
   thisYearBooks.forEach((b) => {
     const m = parseInt(b.date.slice(5, 7), 10) - 1;
     if (m >= 0 && m < 12) monthly[m]++;
   });
   const maxMonthly = Math.max(1, ...monthly);
 
-  // 페이스 (현재까지 월 기준)
   const monthsPassed = currentMonth + 1;
   const pace = monthsPassed > 0 ? (total / monthsPassed) * 12 : 0;
 
@@ -58,105 +61,109 @@ export const Dashboard = ({ books }: Props) => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-2xl mx-auto px-5 sm:px-8 pt-12 pb-24">
-        <header className="mb-8">
-          <div className="flex items-center gap-2 text-muted-foreground text-sm mb-3">
-            <TrendingUp className="w-4 h-4" strokeWidth={1.75} />
-            <span>{year} Analytics</span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">독서 대시보드</h1>
+    <div className="min-h-screen">
+      <div className="max-w-2xl mx-auto px-5 sm:px-8 pt-10 pb-28">
+        <header className="relative mb-6">
+          <img src={sparkleImg} alt="" aria-hidden className="absolute -top-2 right-4 w-12 h-12 animate-wiggle" />
+          <p className="font-handwrite text-xl text-primary mb-1">{year} ✿ Stats</p>
+          <h1 className="font-handwrite text-5xl text-foreground leading-none">대시보드</h1>
         </header>
 
         {/* 목표 카드 */}
-        <section className="rounded-2xl border border-border p-5 mb-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Target className="w-4 h-4" strokeWidth={1.75} />
-              <span>올해 목표</span>
-            </div>
-            {editing ? (
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  min={1}
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  className="h-8 w-20 text-sm rounded-md"
-                  autoFocus
-                  onKeyDown={(e) => { if (e.key === "Enter") saveGoal(); }}
-                />
+        <section className="doodle-card p-5 mb-4 relative overflow-hidden">
+          <img src={sunImg} alt="" aria-hidden className="absolute -top-6 -right-6 w-24 h-24 opacity-50" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <p className="font-handwrite text-2xl text-foreground">🎯 올해 목표</p>
+              {editing ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={1}
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    className="h-9 w-20 text-base rounded-xl border-2 font-doodle"
+                    autoFocus
+                    onKeyDown={(e) => { if (e.key === "Enter") saveGoal(); }}
+                  />
+                  <button
+                    onClick={saveGoal}
+                    className="p-2 rounded-full bg-primary text-primary-foreground hover:opacity-90"
+                    aria-label="저장"
+                  >
+                    <Check className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
                 <button
-                  onClick={saveGoal}
-                  className="p-1.5 rounded-md hover:bg-accent text-foreground"
-                  aria-label="저장"
+                  onClick={() => { setDraft(String(goal)); setEditing(true); }}
+                  className="flex items-center gap-1 font-doodle text-sm text-muted-foreground hover:text-primary px-3 py-1.5 rounded-full hover:bg-primary-soft"
                 >
-                  <Check className="w-4 h-4" />
+                  <Pencil className="w-3.5 h-3.5" />
+                  <span>수정</span>
                 </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => { setDraft(String(goal)); setEditing(true); }}
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-accent"
-              >
-                <Pencil className="w-3 h-3" />
-                <span>수정</span>
-              </button>
-            )}
-          </div>
+              )}
+            </div>
 
-          <div className="flex items-baseline gap-2 mb-3">
-            <span className="text-4xl font-bold tracking-tight">{total}</span>
-            <span className="text-lg text-muted-foreground">/ {goal}권</span>
-          </div>
+            <div className="flex items-baseline gap-2 mb-4">
+              <span className="font-handwrite text-6xl text-primary leading-none">{total}</span>
+              <span className="font-doodle text-2xl text-muted-foreground">/ {goal}권</span>
+            </div>
 
-          <div className="h-2 bg-secondary rounded-full overflow-hidden mb-3">
-            <div
-              className="h-full bg-foreground transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
+            <div className="h-3 bg-accent rounded-full overflow-hidden mb-2 border-2 border-border">
+              <div
+                className="h-full bg-primary transition-all duration-700 rounded-full"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
 
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{progress.toFixed(0)}% 달성</span>
-            <span>{remaining > 0 ? `${remaining}권 남음` : "🎉 목표 달성!"}</span>
+            <div className="flex items-center justify-between font-doodle text-sm">
+              <span className="text-muted-foreground">{progress.toFixed(0)}% 달성</span>
+              <span className="text-foreground font-bold">
+                {remaining > 0 ? `${remaining}권 남음` : "🎉 목표 달성!"}
+              </span>
+            </div>
           </div>
         </section>
 
         {/* 통계 카드 */}
-        <div className="grid grid-cols-2 gap-3 mb-8">
+        <div className="grid grid-cols-2 gap-3 mb-6">
           <StatCard
-            icon={<BookOpen className="w-4 h-4" strokeWidth={1.75} />}
+            doodle={sproutImg}
             label="이번 달"
             value={`${monthly[currentMonth]}권`}
           />
           <StatCard
-            icon={<TrendingUp className="w-4 h-4" strokeWidth={1.75} />}
+            doodle={flowerImg}
             label="연간 페이스"
             value={`${pace.toFixed(1)}권`}
           />
         </div>
 
         {/* 월별 차트 */}
-        <section>
-          <h2 className="text-sm font-medium text-muted-foreground mb-4">월별 독서량</h2>
-          <div className="space-y-2.5">
-            {MONTHS.map((m, i) => (
-              <div key={m} className="flex items-center gap-3">
-                <span className={`text-xs w-8 ${i === currentMonth ? "text-foreground font-medium" : "text-muted-foreground"}`}>
-                  {m}
-                </span>
-                <div className="flex-1 h-7 bg-secondary/50 rounded-md overflow-hidden relative">
-                  <div
-                    className={`h-full transition-all duration-500 ${i === currentMonth ? "bg-foreground" : "bg-muted-foreground/40"}`}
-                    style={{ width: monthly[i] > 0 ? `${(monthly[i] / maxMonthly) * 100}%` : "0%" }}
-                  />
+        <section className="doodle-card p-5 relative">
+          <img src={cloudImg} alt="" aria-hidden className="absolute top-3 right-3 w-12 h-10 opacity-60 animate-float" />
+          <h2 className="font-handwrite text-2xl text-foreground mb-4">📊 월별 독서량</h2>
+          <div className="space-y-2">
+            {MONTHS.map((m, i) => {
+              const isCurrent = i === currentMonth;
+              return (
+                <div key={m} className="flex items-center gap-3">
+                  <span className={`font-doodle text-sm w-9 ${isCurrent ? "text-primary font-bold" : "text-muted-foreground"}`}>
+                    {m}
+                  </span>
+                  <div className="flex-1 h-7 bg-accent/40 rounded-full overflow-hidden border-2 border-border/50">
+                    <div
+                      className={`h-full transition-all duration-700 rounded-full ${isCurrent ? "bg-primary" : "bg-sky"}`}
+                      style={{ width: monthly[i] > 0 ? `${(monthly[i] / maxMonthly) * 100}%` : "0%" }}
+                    />
+                  </div>
+                  <span className={`font-doodle text-sm w-10 text-right ${isCurrent ? "text-primary font-bold" : "text-muted-foreground"}`}>
+                    {monthly[i] > 0 ? `${monthly[i]}권` : "—"}
+                  </span>
                 </div>
-                <span className="text-xs text-muted-foreground w-8 text-right">
-                  {monthly[i] > 0 ? `${monthly[i]}권` : "—"}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       </div>
@@ -164,12 +171,12 @@ export const Dashboard = ({ books }: Props) => {
   );
 };
 
-const StatCard = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) => (
-  <div className="rounded-2xl border border-border p-4">
-    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-      {icon}
-      <span>{label}</span>
+const StatCard = ({ doodle, label, value }: { doodle: string; label: string; value: string }) => (
+  <div className="doodle-card p-4 relative overflow-hidden">
+    <img src={doodle} alt="" aria-hidden className="absolute -bottom-2 -right-2 w-16 h-16 opacity-70" />
+    <div className="relative">
+      <p className="font-doodle text-sm text-muted-foreground mb-1">{label}</p>
+      <p className="font-handwrite text-3xl text-foreground">{value}</p>
     </div>
-    <p className="text-2xl font-bold tracking-tight">{value}</p>
   </div>
 );
