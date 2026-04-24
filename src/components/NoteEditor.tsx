@@ -155,7 +155,9 @@ const ToolButton = ({ children, ...props }: React.ButtonHTMLAttributes<HTMLButto
     {...props}
     onMouseDown={(e) => e.preventDefault()}
     className="h-9 w-9 rounded-md hover:bg-accent text-foreground flex items-center justify-center flex-shrink-0"
-  />
+  >
+    {children}
+  </button>
 );
 
 const Divider = () => <div className="w-px h-5 bg-border mx-1 flex-shrink-0" />;
