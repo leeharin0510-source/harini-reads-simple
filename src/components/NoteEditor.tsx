@@ -39,11 +39,15 @@ export const NoteEditor = ({ book, onBack }: Props) => {
     }
   }, [book.note]);
 
+  const saveTimer = useRef<number | null>(null);
   const handleInput = () => {
     setSaved(false);
     const html = editorRef.current?.innerHTML || "";
-    updateBook(book.id, { note: html });
-    setTimeout(() => setSaved(true), 300);
+    if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    saveTimer.current = window.setTimeout(async () => {
+      await updateBook(book.id, { note: html });
+      setSaved(true);
+    }, 600);
   };
 
   const exec = (cmd: string, value?: string) => {

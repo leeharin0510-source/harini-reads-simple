@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export interface Book {
   id: string;
   title: string;
@@ -6,33 +8,40 @@ export interface Book {
   note: string;
 }
 
-const KEY = "harin_reading_log_books";
-
-export const loadBooks = (): Book[] => {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  localStorage.setItem(KEY, JSON.stringify([]));
-  return [];
+export const loadBooks = async (): Promise<Book[]> => {
+  const { data, error } = await supabase
+    .from("books")
+    .select("id,title,author,date,note")
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.error("loadBooks error", error);
+    return [];
+  }
+  return (data ?? []) as Book[];
 };
 
-export const saveBooks = (books: Book[]) => {
-  localStorage.setItem(KEY, JSON.stringify(books));
+export const addBook = async (book: Omit<Book, "id" | "note">): Promise<Book | null> => {
+  const { data, error } = await supabase
+    .from("books")
+    .insert({ ...book, note: "" })
+    .select("id,title,author,date,note")
+    .single();
+  if (error) {
+    console.error("addBook error", error);
+    return null;
+  }
+  return data as Book;
 };
 
-export const updateBook = (id: string, patch: Partial<Book>) => {
-  const books = loadBooks().map((b) => (b.id === id ? { ...b, ...patch } : b));
-  saveBooks(books);
+export const updateBook = async (id: string, patch: Partial<Book>) => {
+  const { error } = await supabase
+    .from("books")
+    .update({ ...patch, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) console.error("updateBook error", error);
 };
 
-export const addBook = (book: Omit<Book, "id" | "note">) => {
-  const books = loadBooks();
-  const newBook: Book = { ...book, id: Date.now().toString(), note: "" };
-  saveBooks([newBook, ...books]);
-  return newBook;
-};
-
-export const deleteBook = (id: string) => {
-  saveBooks(loadBooks().filter((b) => b.id !== id));
+export const deleteBook = async (id: string) => {
+  const { error } = await supabase.from("books").delete().eq("id", id);
+  if (error) console.error("deleteBook error", error);
 };
