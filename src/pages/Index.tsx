@@ -50,18 +50,18 @@ const Index = () => {
       )}
 
       {/* 하단 탭바 */}
-      <nav className="fixed bottom-0 inset-x-0 z-30 bg-background/95 backdrop-blur border-t border-border">
-        <div className="max-w-2xl mx-auto px-5 sm:px-8 flex items-center justify-around h-16 safe-bottom">
+      <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30">
+        <div className="doodle-card flex items-center gap-1 p-1.5 bg-card">
           <TabButton
             active={tab === "list"}
             onClick={() => setTab("list")}
-            icon={<BookOpen className="w-5 h-5" strokeWidth={1.75} />}
+            icon={<BookOpen className="w-4 h-4" strokeWidth={2} />}
             label="기록"
           />
           <TabButton
             active={tab === "dashboard"}
             onClick={() => setTab("dashboard")}
-            icon={<BarChart3 className="w-5 h-5" strokeWidth={1.75} />}
+            icon={<BarChart3 className="w-4 h-4" strokeWidth={2} />}
             label="대시보드"
           />
         </div>
@@ -75,12 +75,14 @@ const TabButton = ({ active, onClick, icon, label }: {
 }) => (
   <button
     onClick={onClick}
-    className={`flex flex-col items-center gap-1 px-6 py-2 rounded-lg transition-colors ${
-      active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+    className={`flex items-center gap-1.5 px-5 py-2.5 rounded-2xl transition-all font-doodle ${
+      active
+        ? "bg-primary text-primary-foreground"
+        : "text-muted-foreground hover:text-foreground hover:bg-accent"
     }`}
   >
     {icon}
-    <span className="text-[11px] font-medium">{label}</span>
+    <span className="text-base">{label}</span>
   </button>
 );
 
