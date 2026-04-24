@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { BookOpen, Plus, ChevronRight, Trash2, Loader2 } from "lucide-react";
-import { Book, addBook, deleteBook } from "@/lib/storage";
+import { useEffect, useState } from "react";
+import { BookOpen, Plus, ChevronRight, Trash2, Loader2, Pencil } from "lucide-react";
+import { Book, addBook, deleteBook, updateBook } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -18,6 +18,19 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
   const [author, setAuthor] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [submitting, setSubmitting] = useState(false);
+  const [editing, setEditing] = useState<Book | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editAuthor, setEditAuthor] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  useEffect(() => {
+    if (editing) {
+      setEditTitle(editing.title);
+      setEditAuthor(editing.author);
+      setEditDate(editing.date);
+    }
+  }, [editing]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +49,21 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
       await deleteBook(id);
       await onChange();
     }
+  };
+
+  const handleEdit = (e: React.MouseEvent, book: Book) => {
+    e.stopPropagation();
+    setEditing(book);
+  };
+
+  const submitEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editing || !editTitle.trim() || !editAuthor.trim() || savingEdit) return;
+    setSavingEdit(true);
+    await updateBook(editing.id, { title: editTitle, author: editAuthor, date: editDate });
+    setSavingEdit(false);
+    setEditing(null);
+    await onChange();
   };
 
   const year = new Date().getFullYear();
