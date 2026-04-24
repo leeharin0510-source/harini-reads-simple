@@ -4,8 +4,6 @@
 
 /* Pastel crayon doodle design system. All colors HSL. */
 
-@import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Caveat:wght@400;600;700&display=swap');
-
 @layer base {
   :root {
     --background: 50 60% 97%;
@@ -96,9 +94,9 @@
 
   body {
     @apply text-foreground;
-    font-family: 'Gowun Dodum', "Apple SD Gothic Neo", "Noto Sans KR", -apple-system, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
     -webkit-font-smoothing: antialiased;
-    line-height: 1.65;
+    line-height: 1.7;
     background-image:
       radial-gradient(ellipse at 10% 0%, hsl(155 60% 90% / 0.5) 0px, transparent 40%),
       radial-gradient(ellipse at 90% 10%, hsl(200 80% 92% / 0.55) 0px, transparent 40%),
@@ -108,8 +106,8 @@
 }
 
 @layer components {
-  .font-handwrite { font-family: 'Caveat', 'Gowun Dodum', cursive; letter-spacing: -0.01em; }
-  .font-doodle { font-family: 'Gowun Dodum', sans-serif; }
+  .font-handwrite { font-family: inherit; font-weight: 700; letter-spacing: -0.02em; }
+  .font-doodle { font-family: inherit; }
 
   .notion-editor:empty:before {
     content: attr(data-placeholder);
