@@ -52,6 +52,8 @@ export default {
           soft: "hsl(var(--sky-soft))",
         },
         "primary-soft": "hsl(var(--primary-soft))",
+        "pink-soft": "hsl(var(--pink-soft))",
+        "yellow-soft": "hsl(var(--yellow-soft))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
