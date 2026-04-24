@@ -13,13 +13,8 @@ export const loadBooks = (): Book[] => {
     const raw = localStorage.getItem(KEY);
     if (raw) return JSON.parse(raw);
   } catch {}
-  const seed: Book[] = [
-    { id: "1", title: "달러구트 꿈 백화점", author: "이미예", date: "2025-01-12", note: "" },
-    { id: "2", title: "역행자", author: "자청", date: "2025-02-08", note: "" },
-    { id: "3", title: "미드나잇 라이브러리", author: "매트 헤이그", date: "2025-03-21", note: "" },
-  ];
-  localStorage.setItem(KEY, JSON.stringify(seed));
-  return seed;
+  localStorage.setItem(KEY, JSON.stringify([]));
+  return [];
 };
 
 export const saveBooks = (books: Book[]) => {
