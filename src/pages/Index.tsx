@@ -1,14 +1,19 @@
 import { useEffect, useState } from "react";
+import { BookOpen, BarChart3 } from "lucide-react";
 import { PasswordGate, isUnlocked } from "@/components/PasswordGate";
 import { BookList } from "@/components/BookList";
 import { NoteEditor } from "@/components/NoteEditor";
+import { Dashboard } from "@/components/Dashboard";
 import { Book, loadBooks } from "@/lib/storage";
+
+type Tab = "list" | "dashboard";
 
 const Index = () => {
   const [unlocked, setUnlocked] = useState(false);
   const [books, setBooks] = useState<Book[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<Tab>("list");
 
   const refresh = async () => {
     setLoading(true);
@@ -36,7 +41,47 @@ const Index = () => {
     return <NoteEditor book={selected} onBack={() => { setSelectedId(null); refresh(); }} />;
   }
 
-  return <BookList books={books} loading={loading} onSelect={setSelectedId} onChange={refresh} />;
+  return (
+    <div className="relative">
+      {tab === "list" ? (
+        <BookList books={books} loading={loading} onSelect={setSelectedId} onChange={refresh} />
+      ) : (
+        <Dashboard books={books} />
+      )}
+
+      {/* 하단 탭바 */}
+      <nav className="fixed bottom-0 inset-x-0 z-30 bg-background/95 backdrop-blur border-t border-border">
+        <div className="max-w-2xl mx-auto px-5 sm:px-8 flex items-center justify-around h-16 safe-bottom">
+          <TabButton
+            active={tab === "list"}
+            onClick={() => setTab("list")}
+            icon={<BookOpen className="w-5 h-5" strokeWidth={1.75} />}
+            label="기록"
+          />
+          <TabButton
+            active={tab === "dashboard"}
+            onClick={() => setTab("dashboard")}
+            icon={<BarChart3 className="w-5 h-5" strokeWidth={1.75} />}
+            label="대시보드"
+          />
+        </div>
+      </nav>
+    </div>
+  );
 };
+
+const TabButton = ({ active, onClick, icon, label }: {
+  active: boolean; onClick: () => void; icon: React.ReactNode; label: string;
+}) => (
+  <button
+    onClick={onClick}
+    className={`flex flex-col items-center gap-1 px-6 py-2 rounded-lg transition-colors ${
+      active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+    }`}
+  >
+    {icon}
+    <span className="text-[11px] font-medium">{label}</span>
+  </button>
+);
 
 export default Index;
