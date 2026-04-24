@@ -127,13 +127,26 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
                     {book.author} · {formatDate(book.date)}
                   </p>
                 </div>
-                <button
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => handleEdit(e, book)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleEdit(e as any, book); }}
+                  className="sm:opacity-0 sm:group-hover:opacity-100 p-1.5 text-muted-foreground hover:text-foreground transition-opacity"
+                  aria-label="수정"
+                >
+                  <Pencil className="w-4 h-4" />
+                </span>
+                <span
+                  role="button"
+                  tabIndex={0}
                   onClick={(e) => handleDelete(e, book.id)}
-                  className="opacity-0 group-hover:opacity-100 sm:p-2 p-1 text-muted-foreground hover:text-destructive transition-opacity"
+                  onKeyDown={(e) => { if (e.key === "Enter") handleDelete(e as any, book.id); }}
+                  className="sm:opacity-0 sm:group-hover:opacity-100 p-1.5 text-muted-foreground hover:text-destructive transition-opacity"
                   aria-label="삭제"
                 >
                   <Trash2 className="w-4 h-4" />
-                </button>
+                </span>
                 <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               </button>
             ))
