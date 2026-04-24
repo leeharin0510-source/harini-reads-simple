@@ -8,14 +8,24 @@ const Index = () => {
   const [unlocked, setUnlocked] = useState(false);
   const [books, setBooks] = useState<Book[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = async () => {
+    setLoading(true);
+    const data = await loadBooks();
+    setBooks(data);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    if (isUnlocked()) setUnlocked(true);
-    setBooks(loadBooks());
     document.title = "하린이의 독서기록";
+    if (isUnlocked()) {
+      setUnlocked(true);
+      refresh();
+    } else {
+      setLoading(false);
+    }
   }, []);
-
-  const refresh = () => setBooks(loadBooks());
 
   if (!unlocked) {
     return <PasswordGate onUnlock={() => { setUnlocked(true); refresh(); }} />;
@@ -26,7 +36,7 @@ const Index = () => {
     return <NoteEditor book={selected} onBack={() => { setSelectedId(null); refresh(); }} />;
   }
 
-  return <BookList books={books} onSelect={setSelectedId} onChange={refresh} />;
+  return <BookList books={books} loading={loading} onSelect={setSelectedId} onChange={refresh} />;
 };
 
 export default Index;
