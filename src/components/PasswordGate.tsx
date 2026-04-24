@@ -1,7 +1,11 @@
 import { useState } from "react";
-import { Lock, BookOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import sunImg from "@/assets/doodle-sun.png";
+import cloudImg from "@/assets/doodle-cloud.png";
+import flowerImg from "@/assets/doodle-flower.png";
+import sproutImg from "@/assets/doodle-sprout.png";
+import heartImg from "@/assets/doodle-heart.png";
 
 const PASSWORD = "1234";
 const STORAGE_KEY = "harin_unlocked";
@@ -27,31 +31,37 @@ export const PasswordGate = ({ onUnlock }: Props) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 bg-background">
-      <form onSubmit={submit} className="w-full max-w-sm space-y-8">
-        <div className="text-center space-y-3">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-secondary">
-            <BookOpen className="w-7 h-7 text-foreground" strokeWidth={1.5} />
-          </div>
-          <h1 className="text-2xl font-semibold tracking-tight">하린이의 독서기록</h1>
-          <p className="text-sm text-muted-foreground">암호를 입력해 주세요</p>
+    <div className="min-h-screen flex items-center justify-center px-6 relative overflow-hidden">
+      {/* 배경 doodles */}
+      <img src={sunImg} alt="" aria-hidden className="absolute top-8 right-6 w-24 h-24 animate-wiggle" />
+      <img src={cloudImg} alt="" aria-hidden className="absolute top-20 left-4 w-20 h-16 animate-float opacity-90" />
+      <img src={cloudImg} alt="" aria-hidden className="absolute bottom-32 right-10 w-16 h-12 animate-float opacity-70" style={{ animationDelay: "1s" }} />
+      <img src={sproutImg} alt="" aria-hidden className="absolute bottom-10 left-6 w-20 h-20" />
+      <img src={flowerImg} alt="" aria-hidden className="absolute bottom-8 right-8 w-16 h-16" />
+      <img src={heartImg} alt="" aria-hidden className="absolute top-40 right-16 w-10 h-10 animate-float" style={{ animationDelay: "0.5s" }} />
+
+      <form onSubmit={submit} className="w-full max-w-sm space-y-7 relative z-10">
+        <div className="text-center space-y-2">
+          <p className="font-handwrite text-xl text-primary">welcome ✿</p>
+          <h1 className="font-handwrite text-5xl text-foreground leading-tight">
+            하린이의<br/>독서기록
+          </h1>
+          <p className="font-doodle text-base text-muted-foreground pt-2">암호를 입력해 주세요</p>
         </div>
-        <div className="space-y-3">
-          <div className="relative">
-            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              type="password"
-              inputMode="numeric"
-              autoFocus
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              placeholder="••••"
-              className={`h-12 pl-10 text-base rounded-xl ${error ? "border-destructive animate-shake" : ""}`}
-            />
-          </div>
-          {error && <p className="text-xs text-destructive text-center">암호가 일치하지 않습니다</p>}
-          <Button type="submit" className="w-full h-12 rounded-xl text-base font-medium">
-            들어가기
+
+        <div className="doodle-card p-5 space-y-3">
+          <Input
+            type="password"
+            inputMode="numeric"
+            autoFocus
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder="••••"
+            className={`h-12 rounded-2xl border-2 font-doodle text-center text-lg tracking-widest ${error ? "border-destructive animate-shake" : ""}`}
+          />
+          {error && <p className="font-doodle text-sm text-destructive text-center">암호가 일치하지 않아요!</p>}
+          <Button type="submit" className="w-full h-12 rounded-2xl font-doodle text-lg">
+            들어가기 →
           </Button>
         </div>
       </form>
