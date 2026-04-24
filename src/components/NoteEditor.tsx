@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Bold, Italic, Underline, Type, Palette, Check } from "lucide-react";
+import { ArrowLeft, Bold, Italic, Underline, Type, Palette } from "lucide-react";
 import { Book, updateBook } from "@/lib/storage";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
