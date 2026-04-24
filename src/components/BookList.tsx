@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { BookOpen, Plus, ChevronRight, Trash2, Loader2 } from "lucide-react";
-import { Book, addBook, deleteBook } from "@/lib/storage";
+import { useEffect, useState } from "react";
+import { BookOpen, Plus, ChevronRight, Trash2, Loader2, Pencil } from "lucide-react";
+import { Book, addBook, deleteBook, updateBook } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -18,6 +18,19 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
   const [author, setAuthor] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [submitting, setSubmitting] = useState(false);
+  const [editing, setEditing] = useState<Book | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editAuthor, setEditAuthor] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  useEffect(() => {
+    if (editing) {
+      setEditTitle(editing.title);
+      setEditAuthor(editing.author);
+      setEditDate(editing.date);
+    }
+  }, [editing]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +49,21 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
       await deleteBook(id);
       await onChange();
     }
+  };
+
+  const handleEdit = (e: React.MouseEvent, book: Book) => {
+    e.stopPropagation();
+    setEditing(book);
+  };
+
+  const submitEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editing || !editTitle.trim() || !editAuthor.trim() || savingEdit) return;
+    setSavingEdit(true);
+    await updateBook(editing.id, { title: editTitle, author: editAuthor, date: editDate });
+    setSavingEdit(false);
+    setEditing(null);
+    await onChange();
   };
 
   const year = new Date().getFullYear();
@@ -99,19 +127,48 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
                     {book.author} · {formatDate(book.date)}
                   </p>
                 </div>
-                <button
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => handleEdit(e, book)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleEdit(e as any, book); }}
+                  className="sm:opacity-0 sm:group-hover:opacity-100 p-1.5 text-muted-foreground hover:text-foreground transition-opacity"
+                  aria-label="수정"
+                >
+                  <Pencil className="w-4 h-4" />
+                </span>
+                <span
+                  role="button"
+                  tabIndex={0}
                   onClick={(e) => handleDelete(e, book.id)}
-                  className="opacity-0 group-hover:opacity-100 sm:p-2 p-1 text-muted-foreground hover:text-destructive transition-opacity"
+                  onKeyDown={(e) => { if (e.key === "Enter") handleDelete(e as any, book.id); }}
+                  className="sm:opacity-0 sm:group-hover:opacity-100 p-1.5 text-muted-foreground hover:text-destructive transition-opacity"
                   aria-label="삭제"
                 >
                   <Trash2 className="w-4 h-4" />
-                </button>
+                </span>
                 <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               </button>
             ))
           )}
         </div>
       </div>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="rounded-2xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle>책 정보 수정</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={submitEdit} className="space-y-3 pt-2">
+            <Input placeholder="책 제목" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="h-11 rounded-lg" />
+            <Input placeholder="저자" value={editAuthor} onChange={(e) => setEditAuthor(e.target.value)} className="h-11 rounded-lg" />
+            <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-11 rounded-lg" />
+            <Button type="submit" disabled={savingEdit} className="w-full h-11 rounded-lg">
+              {savingEdit ? "저장 중…" : "저장"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
