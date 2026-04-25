@@ -26,13 +26,13 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [category, setCategory] = useState<string>("");
+  const [selectedCats, setSelectedCats] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [editing, setEditing] = useState<Book | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editAuthor, setEditAuthor] = useState("");
   const [editDate, setEditDate] = useState("");
-  const [editCategory, setEditCategory] = useState<string>("");
+  const [editCats, setEditCats] = useState<string[]>([]);
   const [savingEdit, setSavingEdit] = useState(false);
   const [categories, setCategories] = useState<string[]>(() => loadCategories());
   const [filter, setFilter] = useState<string>("");
@@ -44,7 +44,7 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
       setEditTitle(editing.title);
       setEditAuthor(editing.author);
       setEditDate(editing.date);
-      setEditCategory(editing.category ?? "");
+      setEditCats(editing.categories ?? []);
     }
   }, [editing]);
 
@@ -52,8 +52,8 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
     e.preventDefault();
     if (!title.trim() || !author.trim() || submitting) return;
     setSubmitting(true);
-    await addBook({ title, author, date, category: category || null });
-    setTitle(""); setAuthor(""); setCategory("");
+    await addBook({ title, author, date, categories: selectedCats });
+    setTitle(""); setAuthor(""); setSelectedCats([]);
     setOpen(false);
     setSubmitting(false);
     await onChange();
@@ -76,7 +76,7 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
     e.preventDefault();
     if (!editing || !editTitle.trim() || !editAuthor.trim() || savingEdit) return;
     setSavingEdit(true);
-    await updateBook(editing.id, { title: editTitle, author: editAuthor, date: editDate, category: editCategory || null });
+    await updateBook(editing.id, { title: editTitle, author: editAuthor, date: editDate, categories: editCats });
     setSavingEdit(false);
     setEditing(null);
     await onChange();
@@ -98,7 +98,7 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
     if (filter === c) setFilter("");
   };
 
-  const filteredBooks = filter ? books.filter((b) => b.category === filter) : books;
+  const filteredBooks = filter ? books.filter((b) => (b.categories ?? []).includes(filter)) : books;
 
   const year = new Date().getFullYear();
 
