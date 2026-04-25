@@ -181,14 +181,14 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
                 <button
                   key={book.id}
                   onClick={() => onSelect(book.id)}
-                  className="group doodle-card w-full flex items-center gap-3 p-4 text-left"
+                  className="group doodle-card w-full flex items-center gap-2 sm:gap-3 p-3 sm:p-4 text-left"
                 >
-                  <div className="w-12 h-12 rounded-2xl bg-accent/60 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    <img src={doodle} alt="" aria-hidden className="w-10 h-10 object-contain" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-accent/60 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    <img src={doodle} alt="" aria-hidden className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-handwrite text-base sm:text-lg text-foreground truncate leading-tight">{book.title}</h3>
-                    <p className="font-doodle text-[11px] sm:text-xs text-muted-foreground mt-0.5 truncate">
+                    <h3 className="font-handwrite text-sm sm:text-lg text-foreground truncate leading-tight">{book.title}</h3>
+                    <p className="font-doodle text-[10px] sm:text-xs text-muted-foreground mt-0.5 truncate">
                       {book.author} · {formatDate(book.date)}
                     </p>
                     {book.categories && book.categories.length > 0 && (
@@ -206,20 +206,20 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
                     tabIndex={0}
                     onClick={(e) => handleEdit(e, book)}
                     onKeyDown={(e) => { if (e.key === "Enter") handleEdit(e as any, book); }}
-                    className="p-2 rounded-full text-muted-foreground hover:text-primary hover:bg-primary-soft transition-colors"
+                    className="p-1.5 sm:p-2 rounded-full text-muted-foreground hover:text-primary hover:bg-primary-soft transition-colors"
                     aria-label="수정"
                   >
-                    <Pencil className="w-4 h-4" />
+                    <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </span>
                   <span
                     role="button"
                     tabIndex={0}
                     onClick={(e) => handleDelete(e, book.id)}
                     onKeyDown={(e) => { if (e.key === "Enter") handleDelete(e as any, book.id); }}
-                    className="p-2 rounded-full text-muted-foreground hover:text-destructive hover:bg-pink-soft transition-colors"
+                    className="p-1.5 sm:p-2 rounded-full text-muted-foreground hover:text-destructive hover:bg-pink-soft transition-colors"
                     aria-label="삭제"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </span>
                 </button>
               );

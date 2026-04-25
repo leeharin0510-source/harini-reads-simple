@@ -50,8 +50,8 @@ const Index = () => {
       )}
 
       {/* 하단 탭바 */}
-      <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30">
-        <div className="doodle-card flex flex-row items-center gap-1 p-1 bg-card whitespace-nowrap">
+      <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 w-[min(17rem,calc(100vw-2rem))]">
+        <div className="doodle-card grid grid-cols-2 gap-1 p-1 bg-card">
           <TabButton
             active={tab === "list"}
             onClick={() => setTab("list")}
@@ -75,14 +75,14 @@ const TabButton = ({ active, onClick, icon, label }: {
 }) => (
   <button
     onClick={onClick}
-    className={`flex flex-row items-center gap-1 px-3 py-1.5 rounded-2xl transition-all font-doodle whitespace-nowrap shrink-0 ${
+    className={`w-full flex flex-row items-center justify-center gap-1 px-2 py-1.5 rounded-2xl transition-all font-doodle whitespace-nowrap leading-none ${
       active
         ? "bg-primary text-primary-foreground"
         : "text-muted-foreground hover:text-foreground hover:bg-accent"
     }`}
   >
     {icon}
-    <span className="text-xs">{label}</span>
+    <span className="text-[10px] sm:text-xs">{label}</span>
   </button>
 );
 
