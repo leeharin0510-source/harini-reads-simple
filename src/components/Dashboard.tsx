@@ -166,6 +166,39 @@ export const Dashboard = ({ books }: Props) => {
             })}
           </div>
         </section>
+
+        {/* 카테고리별 분포 */}
+        <section className="doodle-card p-5 relative mt-4">
+          <h2 className="font-handwrite text-2xl text-foreground mb-4">🏷️ 카테고리별</h2>
+          {(() => {
+            const counts = new Map<string, number>();
+            thisYearBooks.forEach((b) => {
+              const key = b.category || "미분류";
+              counts.set(key, (counts.get(key) ?? 0) + 1);
+            });
+            const entries = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+            const max = Math.max(1, ...entries.map(([, n]) => n));
+            if (entries.length === 0) {
+              return <p className="font-doodle text-sm text-muted-foreground">아직 기록이 없어요</p>;
+            }
+            return (
+              <div className="space-y-2">
+                {entries.map(([name, n]) => (
+                  <div key={name} className="flex items-center gap-3">
+                    <span className="font-doodle text-sm w-28 truncate text-muted-foreground">{name}</span>
+                    <div className="flex-1 h-7 bg-accent/40 rounded-full overflow-hidden border-2 border-border/50">
+                      <div
+                        className="h-full bg-primary rounded-full transition-all duration-700"
+                        style={{ width: `${(n / max) * 100}%` }}
+                      />
+                    </div>
+                    <span className="font-doodle text-sm w-10 text-right text-foreground font-bold">{n}권</span>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </section>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Loader2, Pencil } from "lucide-react";
-import { Book, addBook, deleteBook, updateBook } from "@/lib/storage";
+import { Plus, Trash2, Loader2, Pencil, X } from "lucide-react";
+import { Book, addBook, deleteBook, updateBook, loadCategories, saveCategories } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -26,18 +26,25 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [category, setCategory] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [editing, setEditing] = useState<Book | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editAuthor, setEditAuthor] = useState("");
   const [editDate, setEditDate] = useState("");
+  const [editCategory, setEditCategory] = useState<string>("");
   const [savingEdit, setSavingEdit] = useState(false);
+  const [categories, setCategories] = useState<string[]>(() => loadCategories());
+  const [filter, setFilter] = useState<string>("");
+  const [manageOpen, setManageOpen] = useState(false);
+  const [newCat, setNewCat] = useState("");
 
   useEffect(() => {
     if (editing) {
       setEditTitle(editing.title);
       setEditAuthor(editing.author);
       setEditDate(editing.date);
+      setEditCategory(editing.category ?? "");
     }
   }, [editing]);
 
@@ -45,8 +52,8 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
     e.preventDefault();
     if (!title.trim() || !author.trim() || submitting) return;
     setSubmitting(true);
-    await addBook({ title, author, date });
-    setTitle(""); setAuthor("");
+    await addBook({ title, author, date, category: category || null });
+    setTitle(""); setAuthor(""); setCategory("");
     setOpen(false);
     setSubmitting(false);
     await onChange();
@@ -69,11 +76,29 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
     e.preventDefault();
     if (!editing || !editTitle.trim() || !editAuthor.trim() || savingEdit) return;
     setSavingEdit(true);
-    await updateBook(editing.id, { title: editTitle, author: editAuthor, date: editDate });
+    await updateBook(editing.id, { title: editTitle, author: editAuthor, date: editDate, category: editCategory || null });
     setSavingEdit(false);
     setEditing(null);
     await onChange();
   };
+
+  const addCategory = () => {
+    const v = newCat.trim();
+    if (!v || categories.includes(v)) { setNewCat(""); return; }
+    const next = [...categories, v];
+    setCategories(next);
+    saveCategories(next);
+    setNewCat("");
+  };
+
+  const removeCategory = (c: string) => {
+    const next = categories.filter((x) => x !== c);
+    setCategories(next);
+    saveCategories(next);
+    if (filter === c) setFilter("");
+  };
+
+  const filteredBooks = filter ? books.filter((b) => b.category === filter) : books;
 
   const year = new Date().getFullYear();
 
@@ -98,6 +123,20 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
           </div>
         </header>
 
+        {/* 카테고리 필터 */}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <CatChip active={filter === ""} onClick={() => setFilter("")}>전체</CatChip>
+          {categories.map((c) => (
+            <CatChip key={c} active={filter === c} onClick={() => setFilter(c)}>{c}</CatChip>
+          ))}
+          <button
+            onClick={() => setManageOpen(true)}
+            className="font-doodle text-xs px-3 py-1.5 rounded-full border-2 border-dashed border-border text-muted-foreground hover:text-primary hover:border-primary transition-colors"
+          >
+            + 카테고리 관리
+          </button>
+        </div>
+
         {/* 새 책 추가 버튼 */}
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
@@ -114,6 +153,7 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
               <Input placeholder="책 제목" value={title} onChange={(e) => setTitle(e.target.value)} className="h-12 rounded-2xl border-2 font-doodle text-base" />
               <Input placeholder="저자" value={author} onChange={(e) => setAuthor(e.target.value)} className="h-12 rounded-2xl border-2 font-doodle text-base" />
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-12 rounded-2xl border-2 font-doodle text-base" />
+              <CategorySelect categories={categories} value={category} onChange={setCategory} />
               <Button type="submit" disabled={submitting} className="w-full h-12 rounded-2xl font-doodle text-lg">
                 {submitting ? "추가 중…" : "추가하기 ✿"}
               </Button>
@@ -128,14 +168,14 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
               <Loader2 className="w-6 h-6 text-primary animate-spin" />
               <p className="font-doodle text-sm text-muted-foreground">불러오는 중…</p>
             </div>
-          ) : books.length === 0 ? (
+          ) : filteredBooks.length === 0 ? (
             <div className="text-center py-16">
               <img src={bookImg} alt="" aria-hidden className="w-32 h-32 mx-auto mb-3 opacity-80" />
-              <p className="font-handwrite text-2xl text-muted-foreground">아직 기록된 책이 없어요</p>
-              <p className="font-doodle text-sm text-muted-foreground mt-1">첫 책을 추가해보세요!</p>
+              <p className="font-handwrite text-2xl text-muted-foreground">{filter ? "이 카테고리에 책이 없어요" : "아직 기록된 책이 없어요"}</p>
+              <p className="font-doodle text-sm text-muted-foreground mt-1">{filter ? "다른 카테고리를 선택해보세요" : "첫 책을 추가해보세요!"}</p>
             </div>
           ) : (
-            books.map((book, i) => {
+            filteredBooks.map((book, i) => {
               const doodle = ROW_DOODLES[i % ROW_DOODLES.length];
               return (
                 <button
@@ -151,6 +191,11 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
                     <p className="font-doodle text-xs sm:text-sm text-muted-foreground mt-0.5">
                       {book.author} · {formatDate(book.date)}
                     </p>
+                    {book.category && (
+                      <span className="inline-block mt-1 font-doodle text-[11px] px-2 py-0.5 rounded-full bg-primary-soft text-primary">
+                        {book.category}
+                      </span>
+                    )}
                   </div>
                   <span
                     role="button"
@@ -188,15 +233,98 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
             <Input placeholder="책 제목" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="h-12 rounded-2xl border-2 font-doodle text-base" />
             <Input placeholder="저자" value={editAuthor} onChange={(e) => setEditAuthor(e.target.value)} className="h-12 rounded-2xl border-2 font-doodle text-base" />
             <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-12 rounded-2xl border-2 font-doodle text-base" />
+            <CategorySelect categories={categories} value={editCategory} onChange={setEditCategory} />
             <Button type="submit" disabled={savingEdit} className="w-full h-12 rounded-2xl font-doodle text-lg">
               {savingEdit ? "저장 중…" : "저장하기"}
             </Button>
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* 카테고리 관리 */}
+      <Dialog open={manageOpen} onOpenChange={setManageOpen}>
+        <DialogContent className="rounded-3xl max-w-sm border-2">
+          <DialogHeader>
+            <DialogTitle className="font-handwrite text-3xl">🏷️ 카테고리 관리</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <div className="flex flex-wrap gap-2">
+              {categories.map((c) => (
+                <span key={c} className="inline-flex items-center gap-1 font-doodle text-sm px-3 py-1.5 rounded-full bg-accent text-accent-foreground border-2 border-border">
+                  {c}
+                  <button onClick={() => removeCategory(c)} aria-label="삭제" className="hover:text-destructive">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              ))}
+              {categories.length === 0 && (
+                <p className="font-doodle text-sm text-muted-foreground">카테고리가 없어요. 새로 추가해보세요!</p>
+              )}
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Input
+                placeholder="새 카테고리 이름"
+                value={newCat}
+                onChange={(e) => setNewCat(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCategory(); } }}
+                className="h-11 rounded-2xl border-2 font-doodle text-base"
+              />
+              <Button type="button" onClick={addCategory} className="h-11 rounded-2xl font-doodle px-5">
+                추가
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
+
+const CatChip = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
+  <button
+    onClick={onClick}
+    className={`font-doodle text-xs px-3 py-1.5 rounded-full border-2 transition-colors ${
+      active
+        ? "bg-primary text-primary-foreground border-primary"
+        : "bg-card text-foreground border-border hover:border-primary hover:text-primary"
+    }`}
+  >
+    {children}
+  </button>
+);
+
+const CategorySelect = ({ categories, value, onChange }: { categories: string[]; value: string; onChange: (v: string) => void }) => (
+  <div>
+    <p className="font-doodle text-sm text-muted-foreground mb-1.5 px-1">카테고리</p>
+    <div className="flex flex-wrap gap-1.5">
+      <button
+        type="button"
+        onClick={() => onChange("")}
+        className={`font-doodle text-xs px-3 py-1.5 rounded-full border-2 transition-colors ${
+          value === ""
+            ? "bg-primary text-primary-foreground border-primary"
+            : "bg-card text-foreground border-border hover:border-primary"
+        }`}
+      >
+        없음
+      </button>
+      {categories.map((c) => (
+        <button
+          key={c}
+          type="button"
+          onClick={() => onChange(c)}
+          className={`font-doodle text-xs px-3 py-1.5 rounded-full border-2 transition-colors ${
+            value === c
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-card text-foreground border-border hover:border-primary"
+          }`}
+        >
+          {c}
+        </button>
+      ))}
+    </div>
+  </div>
+);
 
 const formatDate = (d: string) => {
   const [y, m, day] = d.split("-");
