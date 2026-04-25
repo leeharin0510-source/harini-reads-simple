@@ -173,8 +173,8 @@ export const Dashboard = ({ books }: Props) => {
           {(() => {
             const counts = new Map<string, number>();
             thisYearBooks.forEach((b) => {
-              const key = b.category || "미분류";
-              counts.set(key, (counts.get(key) ?? 0) + 1);
+              const cats = b.categories && b.categories.length > 0 ? b.categories : ["미분류"];
+              cats.forEach((key) => counts.set(key, (counts.get(key) ?? 0) + 1));
             });
             const entries = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
             const max = Math.max(1, ...entries.map(([, n]) => n));
