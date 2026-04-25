@@ -12,6 +12,7 @@ export const loadBooks = async (): Promise<Book[]> => {
   const { data, error } = await supabase
     .from("books")
     .select("id,title,author,date,note")
+    .order("date", { ascending: false })
     .order("created_at", { ascending: false });
   if (error) {
     console.error("loadBooks error", error);

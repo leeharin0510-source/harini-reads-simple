@@ -75,14 +75,14 @@ const TabButton = ({ active, onClick, icon, label }: {
 }) => (
   <button
     onClick={onClick}
-    className={`flex items-center gap-1.5 px-5 py-2.5 rounded-2xl transition-all font-doodle ${
+    className={`flex items-center gap-1.5 px-4 py-2 rounded-2xl transition-all font-doodle ${
       active
         ? "bg-primary text-primary-foreground"
         : "text-muted-foreground hover:text-foreground hover:bg-accent"
     }`}
   >
     {icon}
-    <span className="text-base">{label}</span>
+    <span className="text-sm">{label}</span>
   </button>
 );
 
