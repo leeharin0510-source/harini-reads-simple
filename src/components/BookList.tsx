@@ -26,13 +26,13 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [category, setCategory] = useState<string>("");
+  const [selectedCats, setSelectedCats] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [editing, setEditing] = useState<Book | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editAuthor, setEditAuthor] = useState("");
   const [editDate, setEditDate] = useState("");
-  const [editCategory, setEditCategory] = useState<string>("");
+  const [editCats, setEditCats] = useState<string[]>([]);
   const [savingEdit, setSavingEdit] = useState(false);
   const [categories, setCategories] = useState<string[]>(() => loadCategories());
   const [filter, setFilter] = useState<string>("");
@@ -44,7 +44,7 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
       setEditTitle(editing.title);
       setEditAuthor(editing.author);
       setEditDate(editing.date);
-      setEditCategory(editing.category ?? "");
+      setEditCats(editing.categories ?? []);
     }
   }, [editing]);
 
@@ -52,8 +52,8 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
     e.preventDefault();
     if (!title.trim() || !author.trim() || submitting) return;
     setSubmitting(true);
-    await addBook({ title, author, date, category: category || null });
-    setTitle(""); setAuthor(""); setCategory("");
+    await addBook({ title, author, date, categories: selectedCats });
+    setTitle(""); setAuthor(""); setSelectedCats([]);
     setOpen(false);
     setSubmitting(false);
     await onChange();
@@ -76,7 +76,7 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
     e.preventDefault();
     if (!editing || !editTitle.trim() || !editAuthor.trim() || savingEdit) return;
     setSavingEdit(true);
-    await updateBook(editing.id, { title: editTitle, author: editAuthor, date: editDate, category: editCategory || null });
+    await updateBook(editing.id, { title: editTitle, author: editAuthor, date: editDate, categories: editCats });
     setSavingEdit(false);
     setEditing(null);
     await onChange();
@@ -98,7 +98,7 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
     if (filter === c) setFilter("");
   };
 
-  const filteredBooks = filter ? books.filter((b) => b.category === filter) : books;
+  const filteredBooks = filter ? books.filter((b) => (b.categories ?? []).includes(filter)) : books;
 
   const year = new Date().getFullYear();
 
@@ -153,7 +153,7 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
               <Input placeholder="책 제목" value={title} onChange={(e) => setTitle(e.target.value)} className="h-12 rounded-2xl border-2 font-doodle text-base" />
               <Input placeholder="저자" value={author} onChange={(e) => setAuthor(e.target.value)} className="h-12 rounded-2xl border-2 font-doodle text-base" />
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-12 rounded-2xl border-2 font-doodle text-base" />
-              <CategorySelect categories={categories} value={category} onChange={setCategory} />
+              <CategoryMultiSelect categories={categories} value={selectedCats} onChange={setSelectedCats} />
               <Button type="submit" disabled={submitting} className="w-full h-12 rounded-2xl font-doodle text-lg">
                 {submitting ? "추가 중…" : "추가하기 ✿"}
               </Button>
@@ -191,10 +191,14 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
                     <p className="font-doodle text-xs sm:text-sm text-muted-foreground mt-0.5">
                       {book.author} · {formatDate(book.date)}
                     </p>
-                    {book.category && (
-                      <span className="inline-block mt-1 font-doodle text-[11px] px-2 py-0.5 rounded-full bg-primary-soft text-primary">
-                        {book.category}
-                      </span>
+                    {book.categories && book.categories.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {book.categories.map((c) => (
+                          <span key={c} className="font-doodle text-[11px] px-2 py-0.5 rounded-full bg-primary-soft text-primary">
+                            {c}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </div>
                   <span
@@ -233,7 +237,7 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
             <Input placeholder="책 제목" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="h-12 rounded-2xl border-2 font-doodle text-base" />
             <Input placeholder="저자" value={editAuthor} onChange={(e) => setEditAuthor(e.target.value)} className="h-12 rounded-2xl border-2 font-doodle text-base" />
             <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-12 rounded-2xl border-2 font-doodle text-base" />
-            <CategorySelect categories={categories} value={editCategory} onChange={setEditCategory} />
+            <CategoryMultiSelect categories={categories} value={editCats} onChange={setEditCats} />
             <Button type="submit" disabled={savingEdit} className="w-full h-12 rounded-2xl font-doodle text-lg">
               {savingEdit ? "저장 중…" : "저장하기"}
             </Button>
@@ -293,38 +297,39 @@ const CatChip = ({ active, onClick, children }: { active: boolean; onClick: () =
   </button>
 );
 
-const CategorySelect = ({ categories, value, onChange }: { categories: string[]; value: string; onChange: (v: string) => void }) => (
-  <div>
-    <p className="font-doodle text-sm text-muted-foreground mb-1.5 px-1">카테고리</p>
-    <div className="flex flex-wrap gap-1.5">
-      <button
-        type="button"
-        onClick={() => onChange("")}
-        className={`font-doodle text-xs px-3 py-1.5 rounded-full border-2 transition-colors ${
-          value === ""
-            ? "bg-primary text-primary-foreground border-primary"
-            : "bg-card text-foreground border-border hover:border-primary"
-        }`}
-      >
-        없음
-      </button>
-      {categories.map((c) => (
-        <button
-          key={c}
-          type="button"
-          onClick={() => onChange(c)}
-          className={`font-doodle text-xs px-3 py-1.5 rounded-full border-2 transition-colors ${
-            value === c
-              ? "bg-primary text-primary-foreground border-primary"
-              : "bg-card text-foreground border-border hover:border-primary"
-          }`}
-        >
-          {c}
-        </button>
-      ))}
+const CategoryMultiSelect = ({ categories, value, onChange }: { categories: string[]; value: string[]; onChange: (v: string[]) => void }) => {
+  const toggle = (c: string) => {
+    if (value.includes(c)) onChange(value.filter((x) => x !== c));
+    else onChange([...value, c]);
+  };
+  return (
+    <div>
+      <p className="font-doodle text-sm text-muted-foreground mb-1.5 px-1">카테고리 (중복 선택 가능)</p>
+      <div className="flex flex-wrap gap-1.5">
+        {categories.length === 0 && (
+          <p className="font-doodle text-xs text-muted-foreground">카테고리를 먼저 추가해주세요</p>
+        )}
+        {categories.map((c) => {
+          const active = value.includes(c);
+          return (
+            <button
+              key={c}
+              type="button"
+              onClick={() => toggle(c)}
+              className={`font-doodle text-xs px-3 py-1.5 rounded-full border-2 transition-colors ${
+                active
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-card text-foreground border-border hover:border-primary"
+              }`}
+            >
+              {c}
+            </button>
+          );
+        })}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const formatDate = (d: string) => {
   const [y, m, day] = d.split("-");

@@ -6,7 +6,7 @@ export interface Book {
   author: string;
   date: string;
   note: string;
-  category: string | null;
+  categories: string[];
 }
 
 const DEFAULT_CATEGORIES = [
@@ -37,27 +37,27 @@ export const saveCategories = (cats: string[]) => {
 export const loadBooks = async (): Promise<Book[]> => {
   const { data, error } = await supabase
     .from("books")
-    .select("id,title,author,date,note,category")
+    .select("id,title,author,date,note,categories")
     .order("date", { ascending: false })
     .order("created_at", { ascending: false });
   if (error) {
     console.error("loadBooks error", error);
     return [];
   }
-  return (data ?? []) as Book[];
+  return (data ?? []).map((b: any) => ({ ...b, categories: b.categories ?? [] })) as Book[];
 };
 
 export const addBook = async (book: Omit<Book, "id" | "note">): Promise<Book | null> => {
   const { data, error } = await supabase
     .from("books")
     .insert({ ...book, note: "" })
-    .select("id,title,author,date,note,category")
+    .select("id,title,author,date,note,categories")
     .single();
   if (error) {
     console.error("addBook error", error);
     return null;
   }
-  return data as Book;
+  return { ...(data as any), categories: (data as any).categories ?? [] } as Book;
 };
 
 export const updateBook = async (id: string, patch: Partial<Book>) => {
