@@ -6,12 +6,38 @@ export interface Book {
   author: string;
   date: string;
   note: string;
+  category: string | null;
 }
+
+const DEFAULT_CATEGORIES = [
+  "자기계발",
+  "경제/금융/부동산",
+  "심리",
+  "문학",
+  "IT",
+  "인문학",
+];
+const CATEGORIES_KEY = "harin_categories";
+
+export const loadCategories = (): string[] => {
+  try {
+    const raw = localStorage.getItem(CATEGORIES_KEY);
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr) && arr.every((x) => typeof x === "string")) return arr;
+    }
+  } catch {}
+  return DEFAULT_CATEGORIES;
+};
+
+export const saveCategories = (cats: string[]) => {
+  localStorage.setItem(CATEGORIES_KEY, JSON.stringify(cats));
+};
 
 export const loadBooks = async (): Promise<Book[]> => {
   const { data, error } = await supabase
     .from("books")
-    .select("id,title,author,date,note")
+    .select("id,title,author,date,note,category")
     .order("date", { ascending: false })
     .order("created_at", { ascending: false });
   if (error) {
@@ -25,7 +51,7 @@ export const addBook = async (book: Omit<Book, "id" | "note">): Promise<Book | n
   const { data, error } = await supabase
     .from("books")
     .insert({ ...book, note: "" })
-    .select("id,title,author,date,note")
+    .select("id,title,author,date,note,category")
     .single();
   if (error) {
     console.error("addBook error", error);
