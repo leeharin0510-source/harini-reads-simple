@@ -187,8 +187,8 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
                     <img src={doodle} alt="" aria-hidden className="w-10 h-10 object-contain" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-handwrite text-lg sm:text-xl text-foreground truncate leading-tight">{book.title}</h3>
-                    <p className="font-doodle text-xs sm:text-sm text-muted-foreground mt-0.5">
+                    <h3 className="font-handwrite text-base sm:text-lg text-foreground truncate leading-tight">{book.title}</h3>
+                    <p className="font-doodle text-[11px] sm:text-xs text-muted-foreground mt-0.5 truncate">
                       {book.author} · {formatDate(book.date)}
                     </p>
                     {book.categories && book.categories.length > 0 && (
