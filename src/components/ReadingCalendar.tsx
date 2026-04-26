@@ -144,25 +144,24 @@ export const ReadingCalendar = ({ books, onSelect }: Props) => {
               아직 이 달에 기록된 책이 없어요
             </p>
           ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+            <div className="space-y-2">
               {monthBooks.map((b) => (
                 <button
                   key={b.id}
                   onClick={() => onSelect(b.id)}
-                  className="doodle-card p-2 flex flex-col items-center text-left"
+                  className="doodle-card w-full flex items-center gap-3 px-3 py-2.5 text-left"
                 >
-                  <div className="w-full aspect-[2/3] bg-accent/60 rounded-lg overflow-hidden mb-2 border-2 border-border">
-                    {b.cover_url ? (
-                      <img src={b.cover_url} alt={b.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center font-handwrite text-2xl text-muted-foreground">
-                        📖
-                      </div>
-                    )}
+                  <span className="font-doodle text-[11px] text-primary w-10 shrink-0">
+                    {b.date.slice(5).replace("-", ".")}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-handwrite text-base text-foreground truncate leading-tight">
+                      {b.title}
+                    </p>
+                    <p className="font-doodle text-[10px] text-muted-foreground truncate">
+                      {b.author}
+                    </p>
                   </div>
-                  <p className="font-doodle text-xs text-foreground line-clamp-2 leading-tight w-full">
-                    {b.title}
-                  </p>
                 </button>
               ))}
             </div>
