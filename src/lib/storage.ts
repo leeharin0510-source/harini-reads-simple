@@ -61,23 +61,64 @@ export const addBook = async (book: Omit<Book, "id" | "note">): Promise<Book | n
   return { ...(data as any), categories: (data as any).categories ?? [] } as Book;
 };
 
-// 책 표지 자동 검색: Open Library Search API 사용 (무료, 키 불필요)
-export const fetchCoverUrl = async (title: string, author: string): Promise<string | null> => {
+// 책 표지 자동 검색: Google Books → Open Library 순서로 시도 (키 불필요)
+const tryGoogleBooks = async (title: string, author: string): Promise<string | null> => {
+  try {
+    const q = `intitle:${title}${author ? `+inauthor:${author}` : ""}`;
+    const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=5&printType=books`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const json = await res.json();
+    const items: any[] = json?.items ?? [];
+    for (const it of items) {
+      const links = it?.volumeInfo?.imageLinks;
+      const raw = links?.thumbnail || links?.smallThumbnail;
+      if (raw) return raw.replace(/^http:/, "https:").replace("&edge=curl", "");
+    }
+    return null;
+  } catch (e) {
+    console.error("googleBooks error", e);
+    return null;
+  }
+};
+
+const tryOpenLibrary = async (title: string, author: string): Promise<string | null> => {
   try {
     const q = new URLSearchParams({ title, author, limit: "1" });
     const res = await fetch(`https://openlibrary.org/search.json?${q.toString()}`);
     if (!res.ok) return null;
     const json = await res.json();
     const doc = json?.docs?.[0];
-    const coverId = doc?.cover_i;
-    if (coverId) return `https://covers.openlibrary.org/b/id/${coverId}-M.jpg`;
-    const isbn = doc?.isbn?.[0];
-    if (isbn) return `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg`;
+    if (doc?.cover_i) return `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`;
+    if (doc?.isbn?.[0]) return `https://covers.openlibrary.org/b/isbn/${doc.isbn[0]}-M.jpg`;
     return null;
   } catch (e) {
-    console.error("fetchCoverUrl error", e);
+    console.error("openLibrary error", e);
     return null;
   }
+};
+
+export const fetchCoverUrl = async (title: string, author: string): Promise<string | null> => {
+  return (
+    (await tryGoogleBooks(title, author)) ??
+    (await tryGoogleBooks(title, "")) ??
+    (await tryOpenLibrary(title, author)) ??
+    null
+  );
+};
+
+// 표지가 비어있는 책들에 대해 일괄 자동 검색
+export const backfillCovers = async (books: Book[]): Promise<number> => {
+  const targets = books.filter((b) => !b.cover_url);
+  let found = 0;
+  for (const b of targets) {
+    const url = await fetchCoverUrl(b.title, b.author);
+    if (url) {
+      await updateBook(b.id, { cover_url: url });
+      found++;
+    }
+  }
+  return found;
 };
 
 export const updateBook = async (id: string, patch: Partial<Book>) => {
