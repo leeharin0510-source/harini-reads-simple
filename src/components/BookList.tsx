@@ -449,3 +449,10 @@ const formatDate = (d: string) => {
   const [y, m, day] = d.split("-");
   return `${y}.${m}.${day}`;
 };
+
+const isNew = (createdAt?: string) => {
+  if (!createdAt) return false;
+  const created = new Date(createdAt).getTime();
+  if (Number.isNaN(created)) return false;
+  return Date.now() - created < 1000 * 60 * 60 * 48; // 48시간
+};
