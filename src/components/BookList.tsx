@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { Plus, Trash2, Loader2, Pencil, X } from "lucide-react";
-import { Book, addBook, deleteBook, updateBook, loadCategories, saveCategories, fetchCoverUrl, backfillCovers } from "@/lib/storage";
+import { useEffect, useRef, useState } from "react";
+import { Plus, Trash2, Loader2, Pencil, X, Upload } from "lucide-react";
+import { Book, addBook, deleteBook, updateBook, loadCategories, saveCategories, fetchCoverUrl, backfillCovers, uploadCoverImage } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -34,6 +34,9 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
   const [editDate, setEditDate] = useState("");
   const [editCats, setEditCats] = useState<string[]>([]);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [editCover, setEditCover] = useState<string | null>(null);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [categories, setCategories] = useState<string[]>(() => loadCategories());
   const [filter, setFilter] = useState<string>("");
   const [manageOpen, setManageOpen] = useState(false);
@@ -46,6 +49,7 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
       setEditAuthor(editing.author);
       setEditDate(editing.date);
       setEditCats(editing.categories ?? []);
+      setEditCover(editing.cover_url ?? null);
     }
   }, [editing]);
 
@@ -78,16 +82,37 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
     e.preventDefault();
     if (!editing || !editTitle.trim() || !editAuthor.trim() || savingEdit) return;
     setSavingEdit(true);
-    const titleChanged = editTitle !== editing.title || editAuthor !== editing.author;
     const patch: Partial<Book> = { title: editTitle, author: editAuthor, date: editDate, categories: editCats };
-    if (titleChanged || !editing.cover_url) {
-      const cover_url = await fetchCoverUrl(editTitle, editAuthor);
-      if (cover_url) patch.cover_url = cover_url;
+    // 사용자가 수동으로 변경한 표지가 있으면 우선 사용
+    if (editCover !== (editing.cover_url ?? null)) {
+      patch.cover_url = editCover;
+    } else {
+      const titleChanged = editTitle !== editing.title || editAuthor !== editing.author;
+      if (titleChanged || !editing.cover_url) {
+        const cover_url = await fetchCoverUrl(editTitle, editAuthor);
+        if (cover_url) patch.cover_url = cover_url;
+      }
     }
     await updateBook(editing.id, patch);
     setSavingEdit(false);
     setEditing(null);
     await onChange();
+  };
+
+  const handleCoverFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      alert("이미지 파일만 업로드할 수 있어요");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert("이미지는 5MB 이하여야 해요");
+      return;
+    }
+    setUploadingCover(true);
+    const url = await uploadCoverImage(file);
+    setUploadingCover(false);
+    if (url) setEditCover(url);
+    else alert("업로드에 실패했어요");
   };
 
   const addCategory = () => {
@@ -271,6 +296,51 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
             <DialogTitle className="font-handwrite text-3xl">✎ 책 정보 수정</DialogTitle>
           </DialogHeader>
           <form onSubmit={submitEdit} className="space-y-3 pt-2">
+            {/* 표지 업로드 */}
+            <div className="flex items-center gap-3">
+              <div className="w-16 h-24 rounded-lg border-2 border-border bg-accent/60 overflow-hidden flex items-center justify-center shrink-0">
+                {editCover ? (
+                  <img src={editCover} alt="표지" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="font-handwrite text-2xl text-muted-foreground">📖</span>
+                )}
+              </div>
+              <div className="flex-1 flex flex-col gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleCoverFile(f);
+                    e.target.value = "";
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingCover}
+                  className="h-9 rounded-xl font-doodle text-sm"
+                >
+                  {uploadingCover ? (
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />업로드 중…</>
+                  ) : (
+                    <><Upload className="w-3.5 h-3.5 mr-1" />표지 직접 올리기</>
+                  )}
+                </Button>
+                {editCover && (
+                  <button
+                    type="button"
+                    onClick={() => setEditCover(null)}
+                    className="font-doodle text-xs text-muted-foreground hover:text-destructive text-left"
+                  >
+                    표지 제거
+                  </button>
+                )}
+              </div>
+            </div>
             <Input placeholder="책 제목" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="h-12 rounded-2xl border-2 font-doodle text-base" />
             <Input placeholder="저자" value={editAuthor} onChange={(e) => setEditAuthor(e.target.value)} className="h-12 rounded-2xl border-2 font-doodle text-base" />
             <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-12 rounded-2xl border-2 font-doodle text-base" />
