@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { BookOpen, BarChart3 } from "lucide-react";
+import { BookOpen, BarChart3, Calendar as CalendarIcon } from "lucide-react";
 import { PasswordGate, isUnlocked } from "@/components/PasswordGate";
 import { BookList } from "@/components/BookList";
 import { NoteEditor } from "@/components/NoteEditor";
 import { Dashboard } from "@/components/Dashboard";
+import { ReadingCalendar } from "@/components/ReadingCalendar";
 import { Book, loadBooks } from "@/lib/storage";
 
-type Tab = "list" | "dashboard";
+type Tab = "list" | "calendar" | "dashboard";
 
 const Index = () => {
   const [unlocked, setUnlocked] = useState(false);
@@ -43,25 +44,33 @@ const Index = () => {
 
   return (
     <div className="relative">
-      {tab === "list" ? (
+      {tab === "list" && (
         <BookList books={books} loading={loading} onSelect={setSelectedId} onChange={refresh} />
-      ) : (
-        <Dashboard books={books} />
       )}
+      {tab === "calendar" && (
+        <ReadingCalendar books={books} onSelect={setSelectedId} />
+      )}
+      {tab === "dashboard" && <Dashboard books={books} />}
 
       {/* 하단 탭바 */}
-      <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 w-[min(17rem,calc(100vw-2rem))]">
-        <div className="doodle-card grid grid-cols-2 gap-1 p-1 bg-card">
+      <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 w-[min(24rem,calc(100vw-1.5rem))]">
+        <div className="doodle-card grid grid-cols-3 gap-1 p-1.5 bg-card">
           <TabButton
             active={tab === "list"}
             onClick={() => setTab("list")}
-            icon={<BookOpen className="w-3.5 h-3.5" strokeWidth={2} />}
+            icon={<BookOpen className="w-4 h-4" strokeWidth={2} />}
             label="기록"
+          />
+          <TabButton
+            active={tab === "calendar"}
+            onClick={() => setTab("calendar")}
+            icon={<CalendarIcon className="w-4 h-4" strokeWidth={2} />}
+            label="캘린더"
           />
           <TabButton
             active={tab === "dashboard"}
             onClick={() => setTab("dashboard")}
-            icon={<BarChart3 className="w-3.5 h-3.5" strokeWidth={2} />}
+            icon={<BarChart3 className="w-4 h-4" strokeWidth={2} />}
             label="대시보드"
           />
         </div>
@@ -75,14 +84,14 @@ const TabButton = ({ active, onClick, icon, label }: {
 }) => (
   <button
     onClick={onClick}
-    className={`w-full flex flex-row items-center justify-center gap-1 px-2 py-1.5 rounded-2xl transition-all font-doodle whitespace-nowrap leading-none ${
+    className={`w-full flex flex-row items-center justify-center gap-1.5 px-2 py-2.5 rounded-2xl transition-all font-doodle whitespace-nowrap leading-none ${
       active
         ? "bg-primary text-primary-foreground"
         : "text-muted-foreground hover:text-foreground hover:bg-accent"
     }`}
   >
     {icon}
-    <span className="text-[10px] sm:text-xs">{label}</span>
+    <span className="text-xs sm:text-sm">{label}</span>
   </button>
 );
 
