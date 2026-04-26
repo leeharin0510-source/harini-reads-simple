@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2, Loader2, Pencil, X } from "lucide-react";
-import { Book, addBook, deleteBook, updateBook, loadCategories, saveCategories } from "@/lib/storage";
+import { Book, addBook, deleteBook, updateBook, loadCategories, saveCategories, fetchCoverUrl } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -52,7 +52,8 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
     e.preventDefault();
     if (!title.trim() || !author.trim() || submitting) return;
     setSubmitting(true);
-    await addBook({ title, author, date, categories: selectedCats });
+    const cover_url = await fetchCoverUrl(title, author);
+    await addBook({ title, author, date, categories: selectedCats, cover_url });
     setTitle(""); setAuthor(""); setSelectedCats([]);
     setOpen(false);
     setSubmitting(false);
@@ -76,7 +77,13 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
     e.preventDefault();
     if (!editing || !editTitle.trim() || !editAuthor.trim() || savingEdit) return;
     setSavingEdit(true);
-    await updateBook(editing.id, { title: editTitle, author: editAuthor, date: editDate, categories: editCats });
+    const titleChanged = editTitle !== editing.title || editAuthor !== editing.author;
+    const patch: Partial<Book> = { title: editTitle, author: editAuthor, date: editDate, categories: editCats };
+    if (titleChanged || !editing.cover_url) {
+      const cover_url = await fetchCoverUrl(editTitle, editAuthor);
+      if (cover_url) patch.cover_url = cover_url;
+    }
+    await updateBook(editing.id, patch);
     setSavingEdit(false);
     setEditing(null);
     await onChange();
@@ -183,8 +190,17 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
                   onClick={() => onSelect(book.id)}
                   className="group doodle-card w-full flex items-center gap-2 sm:gap-3 p-3 sm:p-4 text-left"
                 >
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-accent/60 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    <img src={doodle} alt="" aria-hidden className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
+                  <div className="w-12 h-16 sm:w-14 sm:h-20 rounded-xl bg-accent/60 flex items-center justify-center flex-shrink-0 overflow-hidden border-2 border-border">
+                    {book.cover_url ? (
+                      <img
+                        src={book.cover_url}
+                        alt={book.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                      />
+                    ) : (
+                      <img src={doodle} alt="" aria-hidden className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-handwrite text-sm sm:text-lg text-foreground truncate leading-tight">{book.title}</h3>
