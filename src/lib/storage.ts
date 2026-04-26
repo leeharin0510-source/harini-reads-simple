@@ -109,6 +109,26 @@ export const backfillCovers = async (books: Book[]): Promise<number> => {
   return found;
 };
 
+// 표지 이미지 직접 업로드 (book-covers 버킷)
+export const uploadCoverImage = async (file: File): Promise<string | null> => {
+  try {
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage
+      .from("book-covers")
+      .upload(path, file, { contentType: file.type, upsert: false });
+    if (error) {
+      console.error("uploadCoverImage error", error);
+      return null;
+    }
+    const { data } = supabase.storage.from("book-covers").getPublicUrl(path);
+    return data.publicUrl;
+  } catch (e) {
+    console.error("uploadCoverImage error", e);
+    return null;
+  }
+};
+
 export const updateBook = async (id: string, patch: Partial<Book>) => {
   const { error } = await supabase
     .from("books")
