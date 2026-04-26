@@ -249,7 +249,14 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-handwrite text-sm sm:text-lg text-foreground truncate leading-tight">{book.title}</h3>
+                    <h3 className="font-handwrite text-sm sm:text-lg text-foreground truncate leading-tight">
+                      {book.title}
+                      {isNew(book.created_at) && (
+                        <span className="ml-1.5 align-middle inline-flex items-center font-doodle text-[10px] px-1.5 py-0.5 rounded-full bg-destructive text-destructive-foreground border border-border">
+                          NEW
+                        </span>
+                      )}
+                    </h3>
                     <p className="font-doodle text-[10px] sm:text-xs text-muted-foreground mt-0.5 truncate">
                       {book.author} · {formatDate(book.date)}
                     </p>
