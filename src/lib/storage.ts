@@ -8,6 +8,7 @@ export interface Book {
   note: string;
   categories: string[];
   cover_url?: string | null;
+  created_at?: string;
 }
 
 const DEFAULT_CATEGORIES = [
@@ -38,7 +39,7 @@ export const saveCategories = (cats: string[]) => {
 export const loadBooks = async (): Promise<Book[]> => {
   const { data, error } = await supabase
     .from("books")
-    .select("id,title,author,date,note,categories,cover_url")
+    .select("id,title,author,date,note,categories,cover_url,created_at")
     .order("date", { ascending: false })
     .order("created_at", { ascending: false });
   if (error) {
@@ -52,7 +53,7 @@ export const addBook = async (book: Omit<Book, "id" | "note">): Promise<Book | n
   const { data, error } = await supabase
     .from("books")
     .insert({ ...book, note: "" })
-    .select("id,title,author,date,note,categories,cover_url")
+    .select("id,title,author,date,note,categories,cover_url,created_at")
     .single();
   if (error) {
     console.error("addBook error", error);
