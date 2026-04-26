@@ -98,7 +98,7 @@ export const ReadingCalendar = ({ books, onSelect }: Props) => {
               return (
                 <div
                   key={i}
-                  className={`aspect-square rounded-lg border-2 p-0.5 flex flex-col items-center overflow-hidden ${
+                  className={`min-h-[64px] sm:min-h-[80px] rounded-lg border-2 p-1 flex flex-col overflow-hidden ${
                     isToday ? "border-primary bg-primary-soft" : "border-border/50 bg-card"
                   }`}
                 >
@@ -109,33 +109,21 @@ export const ReadingCalendar = ({ books, onSelect }: Props) => {
                   >
                     {d}
                   </span>
-                  <div className="flex-1 w-full flex items-center justify-center gap-0.5 flex-wrap">
-                    {dayBooks.slice(0, 2).map((b) =>
-                      b.cover_url ? (
-                        <button
-                          key={b.id}
-                          onClick={() => onSelect(b.id)}
-                          className="w-full h-full overflow-hidden rounded"
-                          title={b.title}
-                        >
-                          <img
-                            src={b.cover_url}
-                            alt={b.title}
-                            className="w-full h-full object-cover"
-                          />
-                        </button>
-                      ) : (
-                        <button
-                          key={b.id}
-                          onClick={() => onSelect(b.id)}
-                          className="w-1.5 h-1.5 rounded-full bg-primary"
-                          title={b.title}
-                          aria-label={b.title}
-                        />
-                      )
-                    )}
+                  <div className="flex-1 w-full flex flex-col gap-0.5 overflow-hidden">
+                    {dayBooks.slice(0, 2).map((b) => (
+                      <button
+                        key={b.id}
+                        onClick={() => onSelect(b.id)}
+                        title={b.title}
+                        className="w-full text-left bg-primary-soft hover:bg-primary/20 rounded px-1 py-0.5 leading-tight"
+                      >
+                        <span className="block font-doodle text-[9px] sm:text-[10px] text-primary truncate">
+                          {b.title}
+                        </span>
+                      </button>
+                    ))}
                     {dayBooks.length > 2 && (
-                      <span className="font-doodle text-[8px] text-muted-foreground">
+                      <span className="font-doodle text-[8px] text-muted-foreground px-1">
                         +{dayBooks.length - 2}
                       </span>
                     )}

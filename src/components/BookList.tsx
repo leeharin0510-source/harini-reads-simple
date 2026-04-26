@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2, Loader2, Pencil, X } from "lucide-react";
-import { Book, addBook, deleteBook, updateBook, loadCategories, saveCategories, fetchCoverUrl } from "@/lib/storage";
+import { Book, addBook, deleteBook, updateBook, loadCategories, saveCategories, fetchCoverUrl, backfillCovers } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -38,6 +38,7 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
   const [filter, setFilter] = useState<string>("");
   const [manageOpen, setManageOpen] = useState(false);
   const [newCat, setNewCat] = useState("");
+  const [backfilling, setBackfilling] = useState(false);
 
   useEffect(() => {
     if (editing) {
@@ -107,6 +108,17 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
 
   const filteredBooks = filter ? books.filter((b) => (b.categories ?? []).includes(filter)) : books;
 
+  const missingCovers = books.filter((b) => !b.cover_url).length;
+
+  const runBackfill = async () => {
+    if (backfilling || missingCovers === 0) return;
+    setBackfilling(true);
+    const found = await backfillCovers(books);
+    setBackfilling(false);
+    alert(`표지 ${found}개를 찾았어요 (총 ${missingCovers}권 중)`);
+    await onChange();
+  };
+
   const year = new Date().getFullYear();
 
   return (
@@ -142,6 +154,15 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
           >
             + 카테고리 관리
           </button>
+          {missingCovers > 0 && (
+            <button
+              onClick={runBackfill}
+              disabled={backfilling}
+              className="font-doodle text-xs px-3 py-1.5 rounded-full border-2 border-dashed border-primary text-primary hover:bg-primary-soft transition-colors disabled:opacity-50"
+            >
+              {backfilling ? "찾는 중…" : `📚 표지 자동 채우기 (${missingCovers})`}
+            </button>
+          )}
         </div>
 
         {/* 새 책 추가 버튼 */}
