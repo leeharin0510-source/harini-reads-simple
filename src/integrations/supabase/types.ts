@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           author: string
           categories: string[]
+          cover_url: string | null
           created_at: string
           date: string
           id: string
@@ -28,6 +29,7 @@ export type Database = {
         Insert: {
           author: string
           categories?: string[]
+          cover_url?: string | null
           created_at?: string
           date: string
           id?: string
@@ -38,6 +40,7 @@ export type Database = {
         Update: {
           author?: string
           categories?: string[]
+          cover_url?: string | null
           created_at?: string
           date?: string
           id?: string
