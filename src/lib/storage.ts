@@ -61,62 +61,50 @@ export const addBook = async (book: Omit<Book, "id" | "note">): Promise<Book | n
   return { ...(data as any), categories: (data as any).categories ?? [] } as Book;
 };
 
-// 책 표지 자동 검색: Google Books → Open Library 순서로 시도 (키 불필요)
-const tryGoogleBooks = async (title: string, author: string): Promise<string | null> => {
-  try {
-    const q = `intitle:${title}${author ? `+inauthor:${author}` : ""}`;
-    const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=5&printType=books`;
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const json = await res.json();
-    const items: any[] = json?.items ?? [];
-    for (const it of items) {
-      const links = it?.volumeInfo?.imageLinks;
-      const raw = links?.thumbnail || links?.smallThumbnail;
-      if (raw) return raw.replace(/^http:/, "https:").replace("&edge=curl", "");
-    }
-    return null;
-  } catch (e) {
-    console.error("googleBooks error", e);
-    return null;
-  }
-};
-
-const tryOpenLibrary = async (title: string, author: string): Promise<string | null> => {
-  try {
-    const q = new URLSearchParams({ title, author, limit: "1" });
-    const res = await fetch(`https://openlibrary.org/search.json?${q.toString()}`);
-    if (!res.ok) return null;
-    const json = await res.json();
-    const doc = json?.docs?.[0];
-    if (doc?.cover_i) return `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`;
-    if (doc?.isbn?.[0]) return `https://covers.openlibrary.org/b/isbn/${doc.isbn[0]}-M.jpg`;
-    return null;
-  } catch (e) {
-    console.error("openLibrary error", e);
-    return null;
-  }
-};
-
+// 책 표지 자동 검색: 에지 함수 호출 (네이버 → Google → Open Library 순)
 export const fetchCoverUrl = async (title: string, author: string): Promise<string | null> => {
-  return (
-    (await tryGoogleBooks(title, author)) ??
-    (await tryGoogleBooks(title, "")) ??
-    (await tryOpenLibrary(title, author)) ??
-    null
-  );
+  try {
+    const { data, error } = await supabase.functions.invoke("fetch-covers", {
+      body: { books: [{ id: "_", title, author }] },
+    });
+    if (error) {
+      console.error("fetchCoverUrl invoke error", error);
+      return null;
+    }
+    return data?.results?.[0]?.cover_url ?? null;
+  } catch (e) {
+    console.error("fetchCoverUrl error", e);
+    return null;
+  }
 };
 
-// 표지가 비어있는 책들에 대해 일괄 자동 검색
+// 표지가 비어있는 책들 일괄 자동 검색 (서버에서 병렬 처리)
 export const backfillCovers = async (books: Book[]): Promise<number> => {
   const targets = books.filter((b) => !b.cover_url);
+  if (targets.length === 0) return 0;
+
+  // 50권씩 배치로 호출 (서버 한 번 호출에 너무 많이 보내지 않도록)
   let found = 0;
-  for (const b of targets) {
-    const url = await fetchCoverUrl(b.title, b.author);
-    if (url) {
-      await updateBook(b.id, { cover_url: url });
-      found++;
+  const batchSize = 50;
+  for (let i = 0; i < targets.length; i += batchSize) {
+    const batch = targets.slice(i, i + batchSize);
+    const { data, error } = await supabase.functions.invoke("fetch-covers", {
+      body: { books: batch.map((b) => ({ id: b.id, title: b.title, author: b.author })) },
+    });
+    if (error) {
+      console.error("backfillCovers invoke error", error);
+      continue;
     }
+    const results: { id: string; cover_url: string | null }[] = data?.results ?? [];
+    // DB에 병렬로 업데이트
+    await Promise.all(
+      results
+        .filter((r) => r.cover_url)
+        .map(async (r) => {
+          await updateBook(r.id, { cover_url: r.cover_url });
+          found++;
+        })
+    );
   }
   return found;
 };
