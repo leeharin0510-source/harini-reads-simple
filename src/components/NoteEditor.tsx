@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Bold, Italic, Underline, Type, Palette } from "lucide-react";
-import { Book, updateBook } from "@/lib/storage";
+import { ArrowLeft, Bold, Italic, Underline, Type, Palette, ImagePlus, Loader2 } from "lucide-react";
+import { Book, updateBook, uploadNoteImage } from "@/lib/storage";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { toast } from "sonner";
 
 interface Props {
   book: Book;
@@ -28,13 +29,16 @@ const SIZES = [
 
 export const NoteEditor = ({ book, onBack }: Props) => {
   const editorRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [saved, setSaved] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const initialised = useRef(false);
 
   useEffect(() => {
     if (editorRef.current && !initialised.current) {
       editorRef.current.innerHTML = book.note || "";
       initialised.current = true;
+      enhanceImages(editorRef.current);
     }
   }, [book.note]);
 
@@ -65,6 +69,92 @@ export const NoteEditor = ({ book, onBack }: Props) => {
     range.insertNode(span);
     sel.removeAllRanges();
     handleInput();
+  };
+
+  // 이미지를 contentEditable에 삽입
+  const insertImage = (url: string) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    editor.focus();
+    const img = document.createElement("img");
+    img.src = url;
+    img.alt = "";
+    img.draggable = true;
+    img.className = "note-image";
+
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0 && editor.contains(sel.anchorNode)) {
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(img);
+      // 커서를 이미지 뒤로
+      range.setStartAfter(img);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } else {
+      editor.appendChild(img);
+    }
+    handleInput();
+  };
+
+  const handleFiles = async (files: FileList | File[]) => {
+    const list = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    if (list.length === 0) return;
+    setUploading(true);
+    for (const f of list) {
+      if (f.size > 5 * 1024 * 1024) {
+        toast.error(`${f.name}: 5MB를 넘는 이미지는 올릴 수 없어요`);
+        continue;
+      }
+      const url = await uploadNoteImage(f);
+      if (url) insertImage(url);
+      else toast.error("이미지 업로드 실패");
+    }
+    setUploading(false);
+  };
+
+  // 에디터 내 이미지 드래그 재배치
+  const draggingRef = useRef<HTMLImageElement | null>(null);
+
+  const onEditorDragStart = (e: React.DragEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === "IMG") {
+      draggingRef.current = target as HTMLImageElement;
+      e.dataTransfer.effectAllowed = "move";
+      // 빈 데이터라도 넣어야 firefox에서 drag 동작
+      e.dataTransfer.setData("text/plain", "");
+    }
+  };
+
+  const onEditorDragOver = (e: React.DragEvent) => {
+    if (draggingRef.current || (e.dataTransfer.types && Array.from(e.dataTransfer.types).includes("Files"))) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = draggingRef.current ? "move" : "copy";
+    }
+  };
+
+  const onEditorDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    // 외부에서 파일 드롭 → 업로드 후 삽입
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      placeCaretFromPoint(e.clientX, e.clientY, editor);
+      await handleFiles(e.dataTransfer.files);
+      return;
+    }
+
+    // 내부 이미지 이동
+    const dragged = draggingRef.current;
+    draggingRef.current = null;
+    if (!dragged) return;
+    const range = caretRangeFromPoint(e.clientX, e.clientY);
+    if (range && editor.contains(range.startContainer)) {
+      range.insertNode(dragged);
+      handleInput();
+    }
   };
 
   return (
@@ -128,6 +218,21 @@ export const NoteEditor = ({ book, onBack }: Props) => {
               ))}
             </PopoverContent>
           </Popover>
+          <Divider />
+          <ToolButton onClick={() => fileInputRef.current?.click()} aria-label="사진 추가">
+            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
+          </ToolButton>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files) handleFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
         </div>
       </header>
 
@@ -143,13 +248,53 @@ export const NoteEditor = ({ book, onBack }: Props) => {
           ref={editorRef}
           contentEditable
           onInput={handleInput}
+          onDragStart={onEditorDragStart}
+          onDragOver={onEditorDragOver}
+          onDrop={onEditorDrop}
           suppressContentEditableWarning
           data-placeholder="이 책에서 인상 깊었던 점을 적어보세요…"
           className="notion-editor font-doodle min-h-[60vh] outline-none text-[18px] leading-[1.8] text-foreground"
         />
+        <p className="font-doodle text-xs text-muted-foreground mt-4">
+          ✿ 사진은 툴바의 사진 아이콘을 누르거나 에디터에 드래그해서 추가해요. 추가된 사진은 잡아끌어서 위치를 옮길 수 있어요.
+        </p>
       </main>
     </div>
   );
+};
+
+// 저장된 HTML에 들어 있는 <img> 들에도 드래그 가능 속성 부여
+const enhanceImages = (root: HTMLElement) => {
+  root.querySelectorAll("img").forEach((img) => {
+    img.setAttribute("draggable", "true");
+    img.classList.add("note-image");
+  });
+};
+
+// 좌표에서 caret Range 얻기 (크로스 브라우저)
+const caretRangeFromPoint = (x: number, y: number): Range | null => {
+  const doc: any = document;
+  if (doc.caretRangeFromPoint) return doc.caretRangeFromPoint(x, y);
+  if (doc.caretPositionFromPoint) {
+    const pos = doc.caretPositionFromPoint(x, y);
+    if (!pos) return null;
+    const r = document.createRange();
+    r.setStart(pos.offsetNode, pos.offset);
+    r.collapse(true);
+    return r;
+  }
+  return null;
+};
+
+const placeCaretFromPoint = (x: number, y: number, editor: HTMLElement) => {
+  const range = caretRangeFromPoint(x, y);
+  const sel = window.getSelection();
+  if (range && sel && editor.contains(range.startContainer)) {
+    sel.removeAllRanges();
+    sel.addRange(range);
+  } else {
+    editor.focus();
+  }
 };
 
 const ToolButton = ({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
