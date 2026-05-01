@@ -116,6 +116,20 @@
   }
   .notion-editor:focus { outline: none; }
 
+  .notion-editor img,
+  .notion-editor .note-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+    border: 2px solid hsl(var(--border));
+    box-shadow: 3px 3px 0 hsl(var(--border));
+    margin: 0.5rem 0;
+    display: block;
+    cursor: grab;
+    user-select: none;
+  }
+  .notion-editor img:active { cursor: grabbing; }
+
   .doodle-card {
     background: hsl(var(--card));
     border: 2px solid hsl(var(--border));
