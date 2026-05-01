@@ -219,9 +219,20 @@ export const NoteEditor = ({ book, onBack }: Props) => {
             </PopoverContent>
           </Popover>
           <Divider />
-          <ToolButton onClick={() => fileInputRef.current?.click()} aria-label="사진 추가">
-            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
-          </ToolButton>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            onMouseDown={(e) => e.preventDefault()}
+            disabled={uploading}
+            className="h-9 px-3 rounded-full bg-primary-soft hover:bg-primary/20 text-foreground flex items-center gap-1.5 flex-shrink-0 font-doodle text-sm disabled:opacity-60"
+            aria-label="사진 추가"
+          >
+            {uploading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <ImagePlus className="w-4 h-4" />
+            )}
+            <span>사진</span>
+          </button>
           <input
             ref={fileInputRef}
             type="file"
