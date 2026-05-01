@@ -112,20 +112,30 @@ export const backfillCovers = async (books: Book[]): Promise<number> => {
 
 // 표지 이미지 직접 업로드 (book-covers 버킷)
 export const uploadCoverImage = async (file: File): Promise<string | null> => {
+  return uploadImageToBucket(file);
+};
+
+// 독서록 본문에 들어갈 이미지 업로드 (같은 book-covers 버킷 재사용)
+export const uploadNoteImage = async (file: File): Promise<string | null> => {
+  return uploadImageToBucket(file, "notes");
+};
+
+const uploadImageToBucket = async (file: File, prefix?: string): Promise<string | null> => {
   try {
     const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-    const path = `${crypto.randomUUID()}.${ext}`;
+    const name = `${crypto.randomUUID()}.${ext}`;
+    const path = prefix ? `${prefix}/${name}` : name;
     const { error } = await supabase.storage
       .from("book-covers")
       .upload(path, file, { contentType: file.type, upsert: false });
     if (error) {
-      console.error("uploadCoverImage error", error);
+      console.error("upload image error", error);
       return null;
     }
     const { data } = supabase.storage.from("book-covers").getPublicUrl(path);
     return data.publicUrl;
   } catch (e) {
-    console.error("uploadCoverImage error", e);
+    console.error("upload image error", e);
     return null;
   }
 };
