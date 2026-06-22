@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { BookOpen, BarChart3, Calendar as CalendarIcon } from "lucide-react";
-import { PasswordGate, isUnlocked } from "@/components/PasswordGate";
 import { BookList } from "@/components/BookList";
 import { NoteEditor } from "@/components/NoteEditor";
 import { Dashboard } from "@/components/Dashboard";
@@ -10,7 +9,6 @@ import { Book, loadBooks } from "@/lib/storage";
 type Tab = "list" | "calendar" | "dashboard";
 
 const Index = () => {
-  const [unlocked, setUnlocked] = useState(false);
   const [books, setBooks] = useState<Book[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -25,17 +23,8 @@ const Index = () => {
 
   useEffect(() => {
     document.title = "하린이의 독서기록";
-    if (isUnlocked()) {
-      setUnlocked(true);
-      refresh();
-    } else {
-      setLoading(false);
-    }
+    refresh();
   }, []);
-
-  if (!unlocked) {
-    return <PasswordGate onUnlock={() => { setUnlocked(true); refresh(); }} />;
-  }
 
   const selected = books.find((b) => b.id === selectedId);
   if (selected) {
