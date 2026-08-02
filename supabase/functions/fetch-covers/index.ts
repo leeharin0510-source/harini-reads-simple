@@ -106,11 +106,16 @@ async function searchNaverImage(title: string, author: string): Promise<string |
     const items: any[] = json?.items ?? [];
     console.log("naver image: items", items.length, "for", q);
     // 세로로 긴 이미지(책 표지 비율)를 우선
-    const scored = items
+    const BOOKSTORES = ["aladin.co.kr", "kyobobook", "yes24.com", "interpark", "ridibooks", "bookthumb", "nl.go.kr", "millie"];
+    const portrait = items
       .map((it) => ({ it, w: Number(it.sizewidth) || 0, h: Number(it.sizeheight) || 0 }))
-      .filter((x) => x.h > x.w * 1.1);
-    const best = scored[0]?.it ?? items[0];
-    return best?.link || best?.thumbnail || null;
+      .filter((x) => x.h > x.w * 1.15);
+    const fromStore = portrait.find((x) =>
+      BOOKSTORES.some((d) => String(x.it.link || "").includes(d))
+    );
+    const best = fromStore?.it ?? portrait[0]?.it;
+    if (!best) return null;
+    return best.link || best.thumbnail || null;
   } catch (e) {
     console.error("naver image error", e);
     return null;
