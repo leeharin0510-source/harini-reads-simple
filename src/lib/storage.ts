@@ -11,29 +11,28 @@ export interface Book {
   created_at?: string;
 }
 
-const DEFAULT_CATEGORIES = [
-  "자기계발",
-  "경제/금융/부동산",
-  "심리",
-  "문학",
-  "IT",
-  "인문학",
-];
-const CATEGORIES_KEY = "harin_categories";
-
-export const loadCategories = (): string[] => {
-  try {
-    const raw = localStorage.getItem(CATEGORIES_KEY);
-    if (raw) {
-      const arr = JSON.parse(raw);
-      if (Array.isArray(arr) && arr.every((x) => typeof x === "string")) return arr;
-    }
-  } catch {}
-  return DEFAULT_CATEGORIES;
+// 카테고리는 이제 클라우드 DB(categories 테이블)에 저장됩니다.
+export const loadCategories = async (): Promise<string[]> => {
+  const { data, error } = await supabase
+    .from("categories")
+    .select("name,sort_order,created_at")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error) {
+    console.error("loadCategories error", error);
+    return [];
+  }
+  return (data ?? []).map((c: any) => c.name as string);
 };
 
-export const saveCategories = (cats: string[]) => {
-  localStorage.setItem(CATEGORIES_KEY, JSON.stringify(cats));
+export const addCategory = async (name: string) => {
+  const { error } = await supabase.from("categories").insert({ name, sort_order: 100 });
+  if (error) console.error("addCategory error", error);
+};
+
+export const removeCategory = async (name: string) => {
+  const { error } = await supabase.from("categories").delete().eq("name", name);
+  if (error) console.error("removeCategory error", error);
 };
 
 export const loadBooks = async (): Promise<Book[]> => {
