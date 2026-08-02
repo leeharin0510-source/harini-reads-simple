@@ -20,16 +20,23 @@ const stripHtml = (s: string) => s.replace(/<[^>]+>/g, "");
 async function searchNaver(title: string, author: string): Promise<string | null> {
   const id = Deno.env.get("NAVER_CLIENT_ID");
   const secret = Deno.env.get("NAVER_CLIENT_SECRET");
-  if (!id || !secret) return null;
+  if (!id || !secret) {
+    console.log("naver: missing credentials", { hasId: !!id, hasSecret: !!secret });
+    return null;
+  }
   try {
     const q = `${title} ${author}`.trim();
     const url = `https://openapi.naver.com/v1/search/book.json?query=${encodeURIComponent(q)}&display=3`;
     const res = await fetch(url, {
-      headers: { "X-Naver-Client-Id": id, "X-Naver-Client-Secret": secret },
+      headers: { "X-Naver-Client-Id": id.trim(), "X-Naver-Client-Secret": secret.trim() },
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.log("naver: http error", res.status, (await res.text()).slice(0, 300));
+      return null;
+    }
     const json = await res.json();
     const items: any[] = json?.items ?? [];
+    console.log("naver: items", items.length, "for", q);
     const normTitle = stripHtml(title).toLowerCase().replace(/\s+/g, "");
     const best =
       items.find((it) => stripHtml(it.title).toLowerCase().replace(/\s+/g, "").includes(normTitle)) ??
