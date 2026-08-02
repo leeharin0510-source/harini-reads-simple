@@ -53,9 +53,13 @@ async function searchGoogle(title: string, author: string): Promise<string | nul
     const q = `intitle:${title}${author ? `+inauthor:${author}` : ""}`;
     const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=3&printType=books`;
     const res = await fetch(url);
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.log("google: http error", res.status, (await res.text()).slice(0, 200));
+      return null;
+    }
     const json = await res.json();
     const items: any[] = json?.items ?? [];
+    console.log("google: items", items.length, "for", q);
     for (const it of items) {
       const links = it?.volumeInfo?.imageLinks;
       const raw = links?.thumbnail || links?.smallThumbnail;
