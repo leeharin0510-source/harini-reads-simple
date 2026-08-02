@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Plus, Trash2, Loader2, Pencil, X, Upload } from "lucide-react";
-import { Book, addBook, deleteBook, updateBook, loadCategories, saveCategories, fetchCoverUrl, backfillCovers, uploadCoverImage } from "@/lib/storage";
+import { Book, addBook, deleteBook, updateBook, loadCategories, addCategory as addCategoryDb, removeCategory as removeCategoryDb, fetchCoverUrl, backfillCovers, uploadCoverImage } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -37,11 +37,15 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
   const [editCover, setEditCover] = useState<string | null>(null);
   const [uploadingCover, setUploadingCover] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [categories, setCategories] = useState<string[]>(() => loadCategories());
+  const [categories, setCategories] = useState<string[]>([]);
   const [filter, setFilter] = useState<string>("");
   const [manageOpen, setManageOpen] = useState(false);
   const [newCat, setNewCat] = useState("");
   const [backfilling, setBackfilling] = useState(false);
+
+  useEffect(() => {
+    loadCategories().then(setCategories);
+  }, []);
 
   useEffect(() => {
     if (editing) {
@@ -115,20 +119,19 @@ export const BookList = ({ books, loading, onSelect, onChange }: Props) => {
     else alert("업로드에 실패했어요");
   };
 
-  const addCategory = () => {
+  const addCategory = async () => {
     const v = newCat.trim();
     if (!v || categories.includes(v)) { setNewCat(""); return; }
-    const next = [...categories, v];
-    setCategories(next);
-    saveCategories(next);
+    setCategories([...categories, v]);
     setNewCat("");
+    await addCategoryDb(v);
+    setCategories(await loadCategories());
   };
 
-  const removeCategory = (c: string) => {
-    const next = categories.filter((x) => x !== c);
-    setCategories(next);
-    saveCategories(next);
+  const removeCategory = async (c: string) => {
+    setCategories(categories.filter((x) => x !== c));
     if (filter === c) setFilter("");
+    await removeCategoryDb(c);
   };
 
   const filteredBooks = filter ? books.filter((b) => (b.categories ?? []).includes(filter)) : books;
