@@ -1,0 +1,2 @@
+UPDATE public.books SET cover_url = 'https://image.aladin.co.kr/product/36235/91/letslook/S532037749_b.jpg' WHERE id = 'caefd89c-c60b-4e62-b88a-12dab48aa8c3';
+UPDATE public.books SET cover_url = 'https://image.yes24.com/goods/94194975/XL' WHERE id = '0ea4680b-fcec-4080-8407-91070c1ea462';
