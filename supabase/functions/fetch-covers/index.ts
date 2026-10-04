@@ -106,18 +106,21 @@ async function searchNaverImage(title: string, author: string): Promise<string |
     const items: any[] = json?.items ?? [];
     console.log("naver image: items", items.length, "for", q);
     // 세로로 긴 이미지(책 표지 비율)를 우선
-    const BOOKSTORES = ["aladin.co.kr", "kyobobook", "yes24.com/goods", "interpark", "ridibooks", "bookthumb", "nl.go.kr", "millie"];
-    const BAD = ["imgnews", "blogimage", "postfiles", "cafe", "blogfiles", "news"];
-    const portrait = items
-      .map((it) => ({ it, w: Number(it.sizewidth) || 0, h: Number(it.sizeheight) || 0 }))
-      .filter((x) => x.h > x.w * 1.2)
-      .filter((x) => !BAD.some((d) => String(x.it.link || "").includes(d)));
-    const fromStore = portrait.find((x) =>
-      BOOKSTORES.some((d) => String(x.it.link || "").includes(d))
-    );
-    const best = fromStore?.it ?? portrait[0]?.it;
+    // 확실한 "표지" 이미지 URL 패턴만 허용 (미리보기/뒷면/목차 제외)
+    const isCover = (u: string) => {
+      const l = u.toLowerCase();
+      if (/letslook|\/back\/|_back|preview|toc|contents|inner|detail/.test(l)) return false;
+      return (
+        /image\.aladin\.co\.kr\/product\/\d+\/\d+\/cover/.test(l) ||
+        /image\.yes24\.com\/goods\/\d+\/(xl|l|m)$/.test(l) ||
+        /contents\.kyobobook\.co\.kr\/sih\/fit-in\/\d+x0\/pdt\//.test(l) ||
+        /shopping-phinf\.pstatic\.net/.test(l) ||
+        /bookthumb-phinf\.pstatic\.net/.test(l)
+      );
+    };
+    const best = items.find((it) => isCover(String(it.link || "")));
     if (!best) return null;
-    return best.link || best.thumbnail || null;
+    return best.link;
   } catch (e) {
     console.error("naver image error", e);
     return null;
