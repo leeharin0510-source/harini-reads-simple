@@ -105,20 +105,17 @@ async function searchNaverImage(title: string, author: string): Promise<string |
     const json = await res.json();
     const items: any[] = json?.items ?? [];
     console.log("naver image: items", items.length, "for", q);
-    // 세로로 긴 이미지(책 표지 비율)를 우선
-    // 확실한 "표지" 이미지 URL 패턴만 허용 (미리보기/뒷면/목차 제외)
-    const isCover = (u: string) => {
-      const l = u.toLowerCase();
-      if (/letslook|\/back\/|_back|preview|toc|contents|inner|detail/.test(l)) return false;
-      return (
-        /image\.aladin\.co\.kr\/product\/\d+\/\d+\/cover/.test(l) ||
-        /image\.yes24\.com\/goods\/\d+\/(xl|l|m)$/.test(l) ||
-        /contents\.kyobobook\.co\.kr\/sih\/fit-in\/\d+x0\/pdt\//.test(l) ||
-        /shopping-phinf\.pstatic\.net/.test(l) ||
-        /bookthumb-phinf\.pstatic\.net/.test(l)
+    // 명백한 미리보기/뒷면/목차만 제외하고, 서점 도메인이면 허용
+    const isBad = (u: string) =>
+      /letslook|\/back\/|_back|preview|_toc|\/toc\/|inner|sample/.test(u.toLowerCase());
+    const isBookstore = (u: string) =>
+      /aladin\.co\.kr|yes24\.com|kyobobook\.co\.kr|pstatic\.net|ypbooks\.co\.kr|bandi\.co\.kr|ridibooks\.com|millie\.co\.kr/.test(
+        u.toLowerCase()
       );
-    };
-    const best = items.find((it) => isCover(String(it.link || "")));
+    // 1순위: 서점 도메인의 표지 이미지, 2순위: 나쁜 패턴이 아닌 아무 이미지
+    const best =
+      items.find((it) => isBookstore(String(it.link || "")) && !isBad(String(it.link || ""))) ??
+      items.find((it) => !isBad(String(it.link || "")));
     if (!best) return null;
     return best.link;
   } catch (e) {
